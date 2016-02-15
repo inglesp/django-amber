@@ -2,7 +2,6 @@ import os.path
 
 import yaml
 
-from django.apps import apps
 from django.core.serializers.base import DeserializationError
 from django.core.serializers.python import (
     Deserializer as PythonDeserializer, Serializer as PythonSerializer,
@@ -24,7 +23,6 @@ def Deserializer(file, **options):
 
     app_label = path_segments[-3]
     model_name = path_segments[-1]
-    model = apps.get_model(app_label, model_name)
 
     data = file.read().decode('utf-8')
 
