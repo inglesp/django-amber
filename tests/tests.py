@@ -36,11 +36,13 @@ class TestModel(TestCase):
 
 @override_settings(SERIALIZATION_MODULES={'md': 'django_pages.serializer'})
 class TestDeserialization(TestCase):
-    def test_deserialization(self):
-        path = os.path.join('tests', 'pages', 'thing', 'valid.md')
+    def deserialize(self, filename):
+        path = os.path.join('tests', 'pages', 'thing', filename)
         with open(path, 'rb') as f:
-            deserialized_obj = next(serializers.deserialize('md', f))
+            return next(serializers.deserialize('md', f))
 
+    def test_deserialization(self):
+        deserialized_obj = self.deserialize('valid.md')
         obj = deserialized_obj.object
 
         self.assertEqual(obj.key, 'valid')
@@ -49,22 +51,16 @@ class TestDeserialization(TestCase):
         self.assertEqual(obj.colour, 'green')
 
     def test_deserialization_with_invalid_yaml(self):
-        path = os.path.join('tests', 'pages', 'thing', 'invalid_yaml.md')
-        with open(path, 'rb') as f:
-            with self.assertRaises(serializers.base.DeserializationError):
-                next(serializers.deserialize('md', f))
+        with self.assertRaises(serializers.base.DeserializationError):
+            self.deserialize('invalid_yaml.md')
 
     def test_deserialization_with_missing_content(self):
-        path = os.path.join('tests', 'pages', 'thing', 'missing_content.md')
-        with open(path, 'rb') as f:
-            with self.assertRaises(serializers.base.DeserializationError):
-                next(serializers.deserialize('md', f))
+        with self.assertRaises(serializers.base.DeserializationError):
+            self.deserialize('missing_content.md')
 
     def test_deserialization_with_invalid_object(self):
-        path = os.path.join('tests', 'pages', 'thing', 'invalid_object.md')
-        with open(path, 'rb') as f:
-            with self.assertRaises(serializers.base.DeserializationError):
-                next(serializers.deserialize('md', f))
+        with self.assertRaises(serializers.base.DeserializationError):
+            self.deserialize('invalid_object.md')
 
 
 @override_settings(SERIALIZATION_MODULES={'md': 'django_pages.serializer'})
