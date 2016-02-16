@@ -3,7 +3,7 @@ import os.path
 from django.core import management, serializers
 from django.test import TestCase, override_settings
 
-from .models import Thing
+from .models import RelatedThingA, RelatedThingB, Thing
 
 
 class TestModel(TestCase):
@@ -49,6 +49,22 @@ class TestDeserialization(TestCase):
         self.assertEqual(obj.content_format, '.md')
         self.assertEqual(obj.content, 'This is a *green* thing\n')
         self.assertEqual(obj.colour, 'green')
+
+    def test_deserialization_with_foreign_key(self):
+        related_obj = RelatedThingA.objects.create(pk=1, name='A1')
+
+        deserialized_obj = self.deserialize('with_foreign_key.md')
+        obj = deserialized_obj.object
+
+        self.assertEqual(obj.related_thing_a, related_obj)
+
+    def test_deserialization_with_natural_foreign_key(self):
+        related_obj = RelatedThingB.objects.create(name='B1')
+
+        deserialized_obj = self.deserialize('with_natural_foreign_key.md')
+        obj = deserialized_obj.object
+
+        self.assertEqual(obj.related_thing_b, related_obj)
 
     def test_deserialization_with_invalid_yaml(self):
         with self.assertRaises(serializers.base.DeserializationError):

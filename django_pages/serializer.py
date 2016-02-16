@@ -2,6 +2,9 @@ import os.path
 
 import yaml
 
+from django.apps import apps
+from django.db import models
+from django.core.exceptions import FieldDoesNotExist
 from django.core.serializers.base import DeserializationError
 from django.core.serializers.python import (
     Deserializer as PythonDeserializer, Serializer as PythonSerializer,
@@ -23,6 +26,7 @@ def Deserializer(file, **options):
 
     app_label = path_segments[-3]
     model_name = path_segments[-1]
+    model = apps.get_model(app_label, model_name)
 
     data = file.read().decode('utf-8')
 
@@ -37,6 +41,17 @@ def Deserializer(file, **options):
         fields = yaml.load(parts[0], Loader=yaml.CSafeLoader)
     except yaml.YAMLError as e:
         raise DeserializationError(e)
+
+    for field_name, field_value in fields.items():
+        try:
+            field = model._meta.get_field(field_name)
+        except FieldDoesNotExist:
+            continue
+
+        if field.remote_field and isinstance(field.remote_field, models.ManyToOneRel):
+            default_manager = field.remote_field.model._default_manager
+            if hasattr(default_manager, 'get_by_natural_key') and isinstance(field_value, str):
+                fields[field_name] = [field_value]
 
     fields['key'], fields['content_format'] = os.path.splitext(filename)
     fields['content'] = parts[1]
