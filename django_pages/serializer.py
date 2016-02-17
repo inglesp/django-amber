@@ -29,7 +29,7 @@ class Serializer(PythonSerializer):
 
         for field_name, field_value in fields.items():
             if is_fk_field_with_natural_key(model, field_name):
-                 if isinstance(field_value, tuple) and len(field_value) == 1:
+                if isinstance(field_value, tuple) and len(field_value) == 1:
                     fields[field_name] = field_value[0]
 
         yaml.dump(fields, self.stream, Dumper=DjangoSafeDumper,
