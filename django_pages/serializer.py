@@ -9,12 +9,44 @@ from django.core.serializers.base import DeserializationError
 from django.core.serializers.python import (
     Deserializer as PythonDeserializer, Serializer as PythonSerializer,
 )
+from django.core.serializers.pyyaml import DjangoSafeDumper
 
 
-# This is required for Django to recognise this module as being valid for
-# deserialization.
 class Serializer(PythonSerializer):
     internal_use_only = False
+
+    def end_serialization(self):
+        assert len(self.objects) == 1
+        obj = self.objects[0]
+
+        app_label, model_name = obj['model'].split('.')
+        model = apps.get_model(app_label, model_name)
+
+        fields = {name: value for name, value in obj['fields'].items() if value}
+        fields.pop('key')
+        fields.pop('content_format')
+        content = fields.pop('content')
+
+        for field_name, field_value in fields.items():
+            try:
+                field = model._meta.get_field(field_name)
+            except FieldDoesNotExist:
+                continue
+
+            if field.remote_field and isinstance(field.remote_field, models.ManyToOneRel):
+                default_manager = field.remote_field.model._default_manager
+                if hasattr(default_manager, 'get_by_natural_key') and isinstance(field_value, tuple) and len(field_value) == 1:
+                    fields[field_name] = field_value[0]
+
+        yaml.dump(fields, self.stream, Dumper=DjangoSafeDumper,
+                  default_flow_style=False, **self.options)
+
+        self.stream.write('---\n')
+        self.stream.write(content)
+
+    def getvalue(self):
+        # Grand-parent super
+        return super(PythonSerializer, self).getvalue()
 
 
 # Built-in deserializers take either a stream or string, but we require a file,

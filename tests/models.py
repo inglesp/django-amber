@@ -20,3 +20,6 @@ class RelatedThingB(models.Model):
             return self.get(name=name)
 
     objects = Manager()
+
+    def natural_key(self):
+        return (self.name,)

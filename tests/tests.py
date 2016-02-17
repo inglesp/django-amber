@@ -80,6 +80,33 @@ class TestDeserialization(TestCase):
 
 
 @override_settings(SERIALIZATION_MODULES={'md': 'django_pages.serializer'})
+class TestSerialization(TestCase):
+    def _test_roundtrip(self, filename, **kwargs):
+        path = os.path.join('tests', 'pages', 'thing', filename)
+        with open(path, 'rb') as f:
+            obj = next(serializers.deserialize('md', f)).object
+
+        obj.save()
+
+        with open(path) as f:
+            expected_serialization = f.read()
+
+        actual = serializers.serialize('md', [obj], **kwargs)
+        self.assertEqual(actual, expected_serialization)
+
+    def test_serialization(self):
+        self._test_roundtrip('valid.md')
+
+    def test_serialization_with_foreign_key(self):
+        related_obj = RelatedThingA.objects.create(pk=1, name='A1')
+        self._test_roundtrip('with_foreign_key.md')
+
+    def test_serialization_with_natural_foreign_key(self):
+        related_obj = RelatedThingB.objects.create(name='B1')
+        self._test_roundtrip('with_natural_foreign_key.md', use_natural_foreign_keys=True)
+
+
+@override_settings(SERIALIZATION_MODULES={'md': 'django_pages.serializer'})
 class TestLoadData(TestCase):
     def test_loaddata(self):
         path = os.path.join('tests', 'pages', 'thing', 'valid.md')
