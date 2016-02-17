@@ -1,4 +1,4 @@
-import os.path
+import os
 
 from django.core import management, serializers
 from django.test import TestCase, override_settings
@@ -117,3 +117,41 @@ class TestLoadData(TestCase):
         self.assertEqual(t.content_format, '.md')
         self.assertEqual(t.content, 'This is a *blue* thing\n')
         self.assertEqual(t.colour, 'blue')
+
+
+class TestDumpToFile(TestCase):
+    def _test_dump_to_file(self, filename, **kwargs):
+        t = Thing.objects.create(
+            key='thing',
+            content='This is a *blue* thing\n',
+            content_format='md',
+            colour='blue',
+            **kwargs
+        )
+
+        t.dump_to_file()
+
+        with open(os.path.join(BASE_PATH, filename)) as f:
+            expected = f.read()
+
+        with open(os.path.join(BASE_PATH, 'thing.md')) as f:
+            actual = f.read()
+
+        self.assertEqual(actual, expected)
+
+    def test_dump_to_file(self):
+        self._test_dump_to_file('valid.md')
+
+    def test_dump_to_file_with_foreign_key(self):
+        related_obj = RelatedThingA.objects.create(pk=1, name='A1')
+        self._test_dump_to_file('with_foreign_key.md', related_thing_a=related_obj)
+
+    def test_dump_to_file_with_natural_foreign_key(self):
+        related_obj = RelatedThingB.objects.create(name='B1')
+        self._test_dump_to_file('with_natural_foreign_key.md', related_thing_b=related_obj)
+
+    def tearDown(self):
+        try:
+            os.remove(os.path.join(BASE_PATH, 'thing.md'))
+        except FileNotFoundError:
+            pass
