@@ -6,6 +6,9 @@ from django.test import TestCase, override_settings
 from .models import RelatedThingA, RelatedThingB, Thing
 
 
+BASE_PATH = os.path.join('tests', 'pages', 'thing')
+
+
 class TestModel(TestCase):
     def test_natural_key(self):
         t = Thing.objects.create(
@@ -36,7 +39,7 @@ class TestModel(TestCase):
 
 class TestDeserialization(TestCase):
     def deserialize(self, filename):
-        path = os.path.join('tests', 'pages', 'thing', filename)
+        path = os.path.join(BASE_PATH, filename)
         with open(path, 'rb') as f:
             return next(serializers.deserialize('md', f))
 
@@ -80,7 +83,7 @@ class TestDeserialization(TestCase):
 
 class TestSerialization(TestCase):
     def _test_roundtrip(self, filename, **kwargs):
-        path = os.path.join('tests', 'pages', 'thing', filename)
+        path = os.path.join(BASE_PATH, filename)
         with open(path, 'rb') as f:
             obj = next(serializers.deserialize('md', f)).object
 
@@ -106,7 +109,7 @@ class TestSerialization(TestCase):
 
 class TestLoadData(TestCase):
     def test_loaddata(self):
-        path = os.path.join('tests', 'pages', 'thing', 'valid.md')
+        path = os.path.join(BASE_PATH, 'valid.md')
         management.call_command('loaddata', path, verbosity=0)
 
         t = Thing.objects.get(key='valid')
