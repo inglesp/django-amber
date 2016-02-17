@@ -34,7 +34,6 @@ class TestModel(TestCase):
         self.assertEqual(Thing.objects.get_by_natural_key('thing1'), t1)
 
 
-@override_settings(SERIALIZATION_MODULES={'md': 'django_pages.serializer'})
 class TestDeserialization(TestCase):
     def deserialize(self, filename):
         path = os.path.join('tests', 'pages', 'thing', filename)
@@ -79,7 +78,6 @@ class TestDeserialization(TestCase):
             self.deserialize('invalid_object.md')
 
 
-@override_settings(SERIALIZATION_MODULES={'md': 'django_pages.serializer'})
 class TestSerialization(TestCase):
     def _test_roundtrip(self, filename, **kwargs):
         path = os.path.join('tests', 'pages', 'thing', filename)
@@ -106,7 +104,6 @@ class TestSerialization(TestCase):
         self._test_roundtrip('with_natural_foreign_key.md', use_natural_foreign_keys=True)
 
 
-@override_settings(SERIALIZATION_MODULES={'md': 'django_pages.serializer'})
 class TestLoadData(TestCase):
     def test_loaddata(self):
         path = os.path.join('tests', 'pages', 'thing', 'valid.md')
