@@ -25,7 +25,7 @@ class PagesModel(models.Model):
         return (self.key,)
 
     def dump_to_file(self):
-        filename = '{}.{}'.format(self.key, self.content_format)
+        filename = '{}{}'.format(self.key, self.content_format)
         app = apps.app_configs[self._meta.app_label]
         dir_path = os.path.join(app.path, 'pages', self._meta.model_name)
         os.makedirs(dir_path, exist_ok=True)

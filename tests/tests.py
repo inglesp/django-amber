@@ -14,7 +14,7 @@ class TestModel(TestCase):
         t = Thing.objects.create(
             key='thing',
             content='This is a *blue* thing',
-            content_format='md',
+            content_format='.md',
             colour='blue',
         )
         self.assertEqual(t.natural_key(), ('thing',))
@@ -23,14 +23,14 @@ class TestModel(TestCase):
         t1 = Thing.objects.create(
             key='thing1',
             content='This is a *blue* thing',
-            content_format='md',
+            content_format='.md',
             colour='blue',
         )
 
         t2 = Thing.objects.create(
             key='thing2',
             content='This is a *green* thing',
-            content_format='md',
+            content_format='.md',
             colour='green',
         )
 
@@ -124,7 +124,7 @@ class TestDumpToFile(TestCase):
         t = Thing.objects.create(
             key='thing',
             content='This is a *blue* thing\n',
-            content_format='md',
+            content_format='.md',
             colour='blue',
             **kwargs
         )
