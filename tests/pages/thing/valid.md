@@ -1,3 +1,3 @@
-colour: green
+colour: blue
 ---
-This is a *green* thing
+This is a *blue* thing

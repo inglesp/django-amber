@@ -49,8 +49,8 @@ class TestDeserialization(TestCase):
 
         self.assertEqual(obj.key, 'valid')
         self.assertEqual(obj.content_format, '.md')
-        self.assertEqual(obj.content, 'This is a *green* thing\n')
-        self.assertEqual(obj.colour, 'green')
+        self.assertEqual(obj.content, 'This is a *blue* thing\n')
+        self.assertEqual(obj.colour, 'blue')
 
     def test_deserialization_with_foreign_key(self):
         related_obj = RelatedThingA.objects.create(pk=1, name='A1')
@@ -115,5 +115,5 @@ class TestLoadData(TestCase):
         t = Thing.objects.get(key='valid')
         self.assertEqual(t.key, 'valid')
         self.assertEqual(t.content_format, '.md')
-        self.assertEqual(t.content, 'This is a *green* thing\n')
-        self.assertEqual(t.colour, 'green')
+        self.assertEqual(t.content, 'This is a *blue* thing\n')
+        self.assertEqual(t.colour, 'blue')
