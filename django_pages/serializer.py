@@ -28,14 +28,8 @@ class Serializer(PythonSerializer):
         content = fields.pop('content')
 
         for field_name, field_value in fields.items():
-            try:
-                field = model._meta.get_field(field_name)
-            except FieldDoesNotExist:
-                continue
-
-            if field.remote_field and isinstance(field.remote_field, models.ManyToOneRel):
-                default_manager = field.remote_field.model._default_manager
-                if hasattr(default_manager, 'get_by_natural_key') and isinstance(field_value, tuple) and len(field_value) == 1:
+            if is_fk_field_with_natural_key(model, field_name):
+                 if isinstance(field_value, tuple) and len(field_value) == 1:
                     fields[field_name] = field_value[0]
 
         yaml.dump(fields, self.stream, Dumper=DjangoSafeDumper,
@@ -75,14 +69,8 @@ def Deserializer(file, **options):
         raise DeserializationError(e)
 
     for field_name, field_value in fields.items():
-        try:
-            field = model._meta.get_field(field_name)
-        except FieldDoesNotExist:
-            continue
-
-        if field.remote_field and isinstance(field.remote_field, models.ManyToOneRel):
-            default_manager = field.remote_field.model._default_manager
-            if hasattr(default_manager, 'get_by_natural_key') and isinstance(field_value, str):
+        if is_fk_field_with_natural_key(model, field_name):
+            if isinstance(field_value, str):
                 fields[field_name] = [field_value]
 
     fields['key'], fields['content_format'] = os.path.splitext(filename)
@@ -97,3 +85,17 @@ def Deserializer(file, **options):
         yield from PythonDeserializer([record], **options)
     except Exception as e:
         raise DeserializationError(e)
+
+
+def is_fk_field_with_natural_key(model, field_name):
+    try:
+        field = model._meta.get_field(field_name)
+    except FieldDoesNotExist:
+        return False
+
+    if field.remote_field and isinstance(field.remote_field, models.ManyToOneRel):
+        default_manager = field.remote_field.model._default_manager
+        if hasattr(default_manager, 'get_by_natural_key'):
+            return  True
+
+    return False
