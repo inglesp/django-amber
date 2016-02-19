@@ -10,31 +10,26 @@ from .models import Article, Author, Category
 BASE_PATH = os.path.join('tests', 'test-pages', 'article')
 
 
+def create_article(**kwargs):
+    attrs = {
+        'key': 'django',
+        'content': 'This is an article about *Django*.\n',
+        'content_format': '.md',
+        'title': 'All about Django',
+    }
+
+    attrs.update(kwargs)
+    return Article.objects.create(**attrs)
+
+
 class TestModel(TestCase):
     def test_natural_key(self):
-        obj = Article.objects.create(
-            key='django',
-            content='This is an article about *Django*.',
-            content_format='.md',
-            title='All about Django',
-        )
+        obj = create_article(key='django')
         self.assertEqual(obj.natural_key(), ('django',))
 
     def test_get_by_natural_key(self):
-        obj1 = Article.objects.create(
-            key='django',
-            content='This is an article about *Django*.',
-            content_format='.md',
-            title='All about Django',
-        )
-
-        obj2 = Article.objects.create(
-            key='python',
-            content='This is an article about *Python*.',
-            content_format='.md',
-            title='All about Python',
-        )
-
+        obj1 = create_article(key='django')
+        obj2 = create_article(key='python')
         self.assertEqual(Article.objects.get_by_natural_key('django'), obj1)
 
 
@@ -122,14 +117,7 @@ class TestLoadData(TestCase):
 
 class TestDumpToFile(TestCase):
     def _test_dump_to_file(self, filename, **kwargs):
-        obj = Article.objects.create(
-            key='django',
-            content='This is an article about *Django*.\n',
-            content_format='.md',
-            title='All about Django',
-            **kwargs
-        )
-
+        obj = create_article(**kwargs)
         obj.dump_to_file()
 
         with open(os.path.join(BASE_PATH, filename)) as f:
