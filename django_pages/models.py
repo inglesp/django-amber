@@ -11,19 +11,7 @@ class PagesManager(models.Manager):
         return self.get(key=key)
 
 
-class PagesModel(models.Model):
-    key = models.CharField(max_length=255)
-    content = models.TextField()
-    content_format = models.CharField(max_length=255)
-
-    objects = PagesManager()
-
-    class Meta:
-        abstract = True
-
-    def natural_key(self):
-        return (self.key,)
-
+class Dumpable:
     def dump_to_file(self):
         filename = '{}{}'.format(self.key, self.content_format)
         app = apps.app_configs[self._meta.app_label]
@@ -37,3 +25,17 @@ class PagesModel(models.Model):
 
         with open(path, 'w') as f:
             f.write(data)
+
+    def natural_key(self):
+        return (self.key,)
+
+
+class PageModel(models.Model, Dumpable):
+    key = models.CharField(max_length=255)
+    content = models.TextField()
+    content_format = models.CharField(max_length=255)
+
+    objects = PagesManager()
+
+    class Meta:
+        abstract = True
