@@ -1,10 +1,9 @@
 import os
-import shutil
 
 from django.core import management, serializers
 from django.test import TestCase, override_settings
 
-from .models import RelatedThingA, RelatedThingB, Thing, ThingToBeDumpedOnSave
+from .models import RelatedThingA, RelatedThingB, Thing
 
 
 BASE_PATH = os.path.join('tests', 'pages', 'thing')
@@ -154,49 +153,5 @@ class TestDumpToFile(TestCase):
     def tearDown(self):
         try:
             os.remove(os.path.join(BASE_PATH, 'thing.md'))
-        except FileNotFoundError:
-            pass
-
-
-class TestDumpToFileOnSave(TestCase):
-    def test_dump_to_file_on_save_when_enabled(self):
-        t = ThingToBeDumpedOnSave(
-            key='thing',
-            content='This is a *blue* thing\n',
-            content_format='.md',
-            colour='blue',
-        )
-
-        t.save()
-
-        with open(os.path.join(BASE_PATH, 'valid.md')) as f:
-            expected = f.read()
-
-        with open(os.path.join('tests', 'pages', 'thingtobedumpedonsave', 'thing.md')) as f:
-            actual = f.read()
-
-        self.assertEqual(actual, expected)
-
-    def test_no_dump_when_not_enabled(self):
-        t = Thing(
-            key='thing',
-            content='This is a *blue* thing\n',
-            content_format='.md',
-            colour='blue',
-        )
-
-        t.save()
-
-        self.assertFalse(os.path.isfile(os.path.join(BASE_PATH, 'thing.md')))
-
-    def setUp(self):
-        try:
-            shutil.rmtree(os.path.join('tests', 'pages', 'thingtobedumpedonsave'))
-        except FileNotFoundError:
-            pass
-
-    def tearDown(self):
-        try:
-            shutil.rmtree(os.path.join('tests', 'pages', 'thingtobedumpedonsave'))
         except FileNotFoundError:
             pass

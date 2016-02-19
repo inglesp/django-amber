@@ -23,9 +23,3 @@ class RelatedThingB(models.Model):
 
     def natural_key(self):
         return (self.name,)
-
-
-class ThingToBeDumpedOnSave(PagesModel):
-    colour = models.CharField(max_length=255)
-
-    dump_on_save = True

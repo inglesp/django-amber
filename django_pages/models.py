@@ -18,18 +18,11 @@ class PagesModel(models.Model):
 
     objects = PagesManager()
 
-    dump_on_save = False
-
     class Meta:
         abstract = True
 
     def natural_key(self):
         return (self.key,)
-
-    def save(self, *args, **kwargs):
-        super(PagesModel, self).save(*args, **kwargs)
-        if self.dump_on_save:
-            self.dump_to_file()
 
     def dump_to_file(self):
         filename = '{}{}'.format(self.key, self.content_format)
