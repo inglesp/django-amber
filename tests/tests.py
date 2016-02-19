@@ -4,7 +4,7 @@ import shutil
 from django.core import management, serializers
 from django.test import TestCase, override_settings
 
-from .models import Article, Author, Category
+from .models import Article, Author
 
 
 BASE_PATH = os.path.join('tests', 'test-pages', 'article')
@@ -49,17 +49,9 @@ class TestDeserialization(TestCase):
         self.assertEqual(obj.title, 'All about Django')
 
     def test_deserialization_with_foreign_key(self):
-        related_obj = Category.objects.create(pk=1, name='programming')
-
-        deserialized_obj = self.deserialize('with_foreign_key.md')
-        obj = deserialized_obj.object
-
-        self.assertEqual(obj.category, related_obj)
-
-    def test_deserialization_with_natural_foreign_key(self):
         related_obj = Author.objects.create(name='Peter')
 
-        deserialized_obj = self.deserialize('with_natural_foreign_key.md')
+        deserialized_obj = self.deserialize('with_foreign_key.md')
         obj = deserialized_obj.object
 
         self.assertEqual(obj.author, related_obj)
@@ -95,12 +87,8 @@ class TestSerialization(TestCase):
         self._test_roundtrip('valid.md')
 
     def test_serialization_with_foreign_key(self):
-        related_obj = Category.objects.create(pk=1, name='programming')
-        self._test_roundtrip('with_foreign_key.md')
-
-    def test_serialization_with_natural_foreign_key(self):
         related_obj = Author.objects.create(name='Peter')
-        self._test_roundtrip('with_natural_foreign_key.md', use_natural_foreign_keys=True)
+        self._test_roundtrip('with_foreign_key.md', use_natural_foreign_keys=True)
 
 
 class TestLoadData(TestCase):
@@ -132,12 +120,8 @@ class TestDumpToFile(TestCase):
         self._test_dump_to_file('valid.md')
 
     def test_dump_to_file_with_foreign_key(self):
-        related_obj = Category.objects.create(pk=1, name='programming')
-        self._test_dump_to_file('with_foreign_key.md', category=related_obj)
-
-    def test_dump_to_file_with_natural_foreign_key(self):
         related_obj = Author.objects.create(name='Peter')
-        self._test_dump_to_file('with_natural_foreign_key.md', author=related_obj)
+        self._test_dump_to_file('with_foreign_key.md', author=related_obj)
 
     def setUp(self):
         try:
