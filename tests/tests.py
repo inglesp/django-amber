@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from django.core import management, serializers
 from django.test import TestCase, override_settings
@@ -6,7 +7,7 @@ from django.test import TestCase, override_settings
 from .models import RelatedThingA, RelatedThingB, Thing
 
 
-BASE_PATH = os.path.join('tests', 'pages', 'thing')
+BASE_PATH = os.path.join('tests', 'test-pages', 'thing')
 
 
 class TestModel(TestCase):
@@ -90,10 +91,10 @@ class TestSerialization(TestCase):
         obj.save()
 
         with open(path) as f:
-            expected_serialization = f.read()
+            expected = f.read()
 
         actual = serializers.serialize('md', [obj], **kwargs)
-        self.assertEqual(actual, expected_serialization)
+        self.assertEqual(actual, expected)
 
     def test_serialization(self):
         self._test_roundtrip('valid.md')
@@ -134,7 +135,7 @@ class TestDumpToFile(TestCase):
         with open(os.path.join(BASE_PATH, filename)) as f:
             expected = f.read()
 
-        with open(os.path.join(BASE_PATH, 'thing.md')) as f:
+        with open(os.path.join('tests', 'pages', 'thing', 'thing.md')) as f:
             actual = f.read()
 
         self.assertEqual(actual, expected)
@@ -150,8 +151,14 @@ class TestDumpToFile(TestCase):
         related_obj = RelatedThingB.objects.create(name='B1')
         self._test_dump_to_file('with_natural_foreign_key.md', related_thing_b=related_obj)
 
+    def setUp(self):
+        try:
+            shutil.rmtree(os.path.join('tests', 'pages', 'thing'))
+        except FileNotFoundError:
+            pass
+
     def tearDown(self):
         try:
-            os.remove(os.path.join(BASE_PATH, 'thing.md'))
+            shutil.rmtree(os.path.join('tests', 'pages', 'thing'))
         except FileNotFoundError:
             pass
