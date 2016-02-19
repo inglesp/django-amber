@@ -2,17 +2,13 @@ from django.db import models
 from django_pages.models import PageModel
 
 
-class Thing(PageModel):
-    colour = models.CharField(max_length=255)
-    related_thing_a = models.ForeignKey('RelatedThingA', null=True)
-    related_thing_b = models.ForeignKey('RelatedThingB', null=True)
+class Article(PageModel):
+    title = models.CharField(max_length=255)
+    author = models.ForeignKey('Author', null=True)
+    category = models.ForeignKey('Category', null=True)
 
 
-class RelatedThingA(models.Model):
-    name = models.CharField(max_length=255)
-
-
-class RelatedThingB(models.Model):
+class Author(models.Model):
     name = models.CharField(max_length=255)
 
     class Manager(models.Manager):
@@ -23,3 +19,7 @@ class RelatedThingB(models.Model):
 
     def natural_key(self):
         return (self.name,)
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=255)
