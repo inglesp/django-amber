@@ -1,20 +1,12 @@
 from django.db import models
-from django_pages.models import PageModel
+from django_pages.models import MetadataModel, PageModel
+
+
+class Author(MetadataModel):
+    name = models.CharField(max_length=255)
+    editor = models.ForeignKey('Author', null=True)
 
 
 class Article(PageModel):
     title = models.CharField(max_length=255)
-    author = models.ForeignKey('Author', null=True)
-
-
-class Author(models.Model):
-    name = models.CharField(max_length=255)
-
-    class Manager(models.Manager):
-        def get_by_natural_key(self, name):
-            return self.get(name=name)
-
-    objects = Manager()
-
-    def natural_key(self):
-        return (self.name,)
+    author = models.ForeignKey(Author, null=True)

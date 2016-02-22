@@ -13,4 +13,5 @@ DATABASES = {
 
 SERIALIZATION_MODULES = {
     'md': 'django_pages.serializer',
+    'yml': 'django_pages.serializer',
 }

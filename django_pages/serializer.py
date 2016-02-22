@@ -24,8 +24,8 @@ class Serializer(PythonSerializer):
 
         fields = {name: value for name, value in obj['fields'].items() if value}
         fields.pop('key')
-        fields.pop('content_format')
-        content = fields.pop('content')
+        fields.pop('content_format', None)
+        content = fields.pop('content', None)
 
         for field_name, field_value in fields.items():
             if is_fk_field_with_natural_key(model, field_name):
@@ -35,8 +35,9 @@ class Serializer(PythonSerializer):
         yaml.dump(fields, self.stream, Dumper=DjangoSafeDumper,
                   default_flow_style=False, **self.options)
 
-        self.stream.write('---\n')
-        self.stream.write(content)
+        if content is not None:
+            self.stream.write('---\n')
+            self.stream.write(content)
 
     def getvalue(self):
         # Grand-parent super
@@ -51,15 +52,13 @@ def Deserializer(file, **options):
     path_segments = path.split(os.path.sep)
 
     app_label = path_segments[-3]
+    model_type = path_segments[-2]
     model_name = path_segments[-1]
     model = apps.get_model(app_label, model_name)
 
     data = file.read().decode('utf-8')
 
     separator = '\n---\n'
-
-    if separator not in data:
-        raise DeserializationError('Missing content')
 
     parts = data.split(separator, 1)
 
@@ -73,8 +72,18 @@ def Deserializer(file, **options):
             if isinstance(field_value, str):
                 fields[field_name] = [field_value]
 
-    fields['key'], fields['content_format'] = os.path.splitext(filename)
-    fields['content'] = parts[1]
+    if model_type == 'pages':
+        if len(parts) == 1:
+            raise DeserializationError('Missing content')
+
+        fields['key'], fields['content_format'] = os.path.splitext(filename)
+        fields['content'] = parts[1]
+
+    elif model_type == 'metadata':
+        fields['key'], _ = os.path.splitext(filename)
+
+    else:
+        assert False
     
     record = {
         'model': '{}.{}'.format(app_label, model_name),

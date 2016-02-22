@@ -15,7 +15,7 @@ class Dumpable:
     def dump_to_file(self):
         filename = '{}{}'.format(self.key, self.content_format)
         app = apps.app_configs[self._meta.app_label]
-        dir_path = os.path.join(app.path, 'pages', self._meta.model_name)
+        dir_path = os.path.join(app.path, self.model_type, self._meta.model_name)
         os.makedirs(dir_path, exist_ok=True)
         path = os.path.join(dir_path, filename)
 
@@ -30,12 +30,26 @@ class Dumpable:
         return (self.key,)
 
 
+class MetadataModel(models.Model, Dumpable):
+    key = models.CharField(max_length=255)
+
+    objects = PagesManager()
+
+    content_format = '.yml'
+    model_type = 'metadata'
+
+    class Meta:
+        abstract = True
+
+
 class PageModel(models.Model, Dumpable):
     key = models.CharField(max_length=255)
     content = models.TextField()
     content_format = models.CharField(max_length=255)
 
     objects = PagesManager()
+
+    model_type = 'pages'
 
     class Meta:
         abstract = True
