@@ -32,6 +32,10 @@ class Serializer(PythonSerializer):
                 if isinstance(field_value, tuple) and len(field_value) == 1:
                     fields[field_name] = field_value[0]
 
+            if is_m2m_field_with_natural_key(model, field_name):
+                if isinstance(field_value, list):
+                    fields[field_name] = [v[0] for v in field_value]
+
         yaml.dump(fields, self.stream, Dumper=DjangoSafeDumper,
                   default_flow_style=False, **self.options)
 
@@ -72,6 +76,10 @@ def Deserializer(file, **options):
             if isinstance(field_value, str):
                 fields[field_name] = [field_value]
 
+        if is_m2m_field_with_natural_key(model, field_name):
+            if isinstance(field_value, list):
+                fields[field_name] = [[v] for v in field_value]
+
     if model_type == 'pages':
         if len(parts) == 1:
             raise DeserializationError('Missing content')
@@ -103,6 +111,20 @@ def is_fk_field_with_natural_key(model, field_name):
         return False
 
     if field.remote_field and isinstance(field.remote_field, models.ManyToOneRel):
+        default_manager = field.remote_field.model._default_manager
+        if hasattr(default_manager, 'get_by_natural_key'):
+            return  True
+
+    return False
+
+
+def is_m2m_field_with_natural_key(model, field_name):
+    try:
+        field = model._meta.get_field(field_name)
+    except FieldDoesNotExist:
+        return False
+
+    if field.remote_field and isinstance(field.remote_field, models.ManyToManyRel):
         default_manager = field.remote_field.model._default_manager
         if hasattr(default_manager, 'get_by_natural_key'):
             return  True

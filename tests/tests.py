@@ -4,7 +4,7 @@ import shutil
 from django.core import management, serializers
 from django.test import TestCase, override_settings
 
-from .models import Article, Author
+from .models import Article, Author, Tag
 
 
 def get_path(model_name, filename):
@@ -38,6 +38,11 @@ def create_article(**kwargs):
 
     attrs.update(kwargs)
     return Article.objects.create(**attrs)
+
+
+def create_tags():
+    keys = ['python', 'django']
+    return [Tag.objects.create(key=key, name=key.title()) for key in keys]
 
 
 class TestModel(TestCase):
@@ -98,6 +103,24 @@ class TestDeserialization(TestCase):
 
         self.assertEqual(obj.author, related_obj)
 
+    def test_metadata_deserialization_with_many_to_many_field(self):
+        tags = create_tags()
+
+        deserialized_obj = self.deserialize('author', 'with_many_to_many_field.yml')
+        deserialized_obj.save()  # Saving is required to create m2m links
+        obj = deserialized_obj.object
+
+        self.assertEqual(list(obj.tags.all()), tags)
+
+    def test_page_deserialization_with_many_to_many_field(self):
+        tags = create_tags()
+
+        deserialized_obj = self.deserialize('article', 'with_many_to_many_field.md')
+        deserialized_obj.save()  # Saving is required to create m2m links
+        obj = deserialized_obj.object
+
+        self.assertEqual(list(obj.tags.all()), tags)
+
     def test_metadata_deserialization_with_invalid_yaml(self):
         with self.assertRaises(serializers.base.DeserializationError):
             self.deserialize('author', 'invalid_yaml.yml')
@@ -123,9 +146,10 @@ class TestSerialization(TestCase):
     def _test_roundtrip(self, model_name, filename):
         path = get_path(model_name, filename)
         with open(path, 'rb') as f:
-            obj = next(serializers.deserialize('md', f)).object
+            deserialized_obj = next(serializers.deserialize('md', f))
 
-        obj.save()
+        deserialized_obj.save()
+        obj = deserialized_obj.object
 
         with open(path) as f:
             expected = f.read()
@@ -146,6 +170,14 @@ class TestSerialization(TestCase):
     def test_page_serialization_with_foreign_key(self):
         related_obj = create_author()
         self._test_roundtrip('article', 'with_foreign_key.md')
+
+    def test_metadata_serialization_with_many_to_many_field(self):
+        create_tags()
+        self._test_roundtrip('author', 'with_many_to_many_field.yml')
+
+    def test_page_serialization_with_many_to_many_field(self):
+        create_tags()
+        self._test_roundtrip('article', 'with_many_to_many_field.md')
 
 
 class TestLoadData(TestCase):
@@ -210,6 +242,20 @@ class TestDumpToFile(TestCase):
         obj.dump_to_file()
 
         self._test_dump_to_file('article', 'with_foreign_key.md')
+
+    def test_metadata_dump_to_file_with_many_to_many_field(self):
+        obj = create_author()
+        obj.tags = create_tags()
+        obj.dump_to_file()
+
+        self._test_dump_to_file('author', 'with_many_to_many_field.yml')
+
+    def test_page_dump_to_file_with_many_to_many_field(self):
+        obj = create_article()
+        obj.tags = create_tags()
+        obj.dump_to_file()
+
+        self._test_dump_to_file('article', 'with_many_to_many_field.md')
 
     def setUp(self):
         shutil.move(
