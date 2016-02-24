@@ -28,13 +28,13 @@ class Serializer(PythonSerializer):
         content = fields.pop('content', None)
 
         for field_name, field_value in fields.items():
-            if is_fk_field_with_natural_key(model, field_name):
-                if isinstance(field_value, tuple) and len(field_value) == 1:
-                    fields[field_name] = field_value[0]
+            if is_fk_field(model, field_name):
+                assert isinstance(field_value, tuple) and len(field_value) == 1
+                fields[field_name] = field_value[0]
 
-            if is_m2m_field_with_natural_key(model, field_name):
-                if isinstance(field_value, list):
-                    fields[field_name] = [v[0] for v in field_value]
+            if is_m2m_field(model, field_name):
+                assert isinstance(field_value, list) and all(len(v) == 1 for v in field_value)
+                fields[field_name] = [v[0] for v in field_value]
 
         yaml.dump(fields, self.stream, Dumper=DjangoSafeDumper,
                   default_flow_style=False, **self.options)
@@ -44,7 +44,6 @@ class Serializer(PythonSerializer):
             self.stream.write(content)
 
     def getvalue(self):
-        # Grand-parent super
         return super(PythonSerializer, self).getvalue()
 
 
@@ -72,13 +71,13 @@ def Deserializer(file, **options):
         raise DeserializationError(e)
 
     for field_name, field_value in fields.items():
-        if is_fk_field_with_natural_key(model, field_name):
-            if isinstance(field_value, str):
-                fields[field_name] = [field_value]
+        if is_fk_field(model, field_name):
+            assert isinstance(field_value, str)
+            fields[field_name] = [field_value]
 
-        if is_m2m_field_with_natural_key(model, field_name):
-            if isinstance(field_value, list):
-                fields[field_name] = [[v] for v in field_value]
+        if is_m2m_field(model, field_name):
+            assert isinstance(field_value, list) and all(isinstance(v, str) for v in field_value)
+            fields[field_name] = [[v] for v in field_value]
 
     if model_type == 'pages':
         if len(parts) == 1:
@@ -104,29 +103,19 @@ def Deserializer(file, **options):
         raise DeserializationError(e)
 
 
-def is_fk_field_with_natural_key(model, field_name):
+def is_fk_field(model, field_name):
     try:
         field = model._meta.get_field(field_name)
     except FieldDoesNotExist:
         return False
 
-    if field.remote_field and isinstance(field.remote_field, models.ManyToOneRel):
-        default_manager = field.remote_field.model._default_manager
-        if hasattr(default_manager, 'get_by_natural_key'):
-            return  True
-
-    return False
+    return field.remote_field and isinstance(field.remote_field, models.ManyToOneRel)
 
 
-def is_m2m_field_with_natural_key(model, field_name):
+def is_m2m_field(model, field_name):
     try:
         field = model._meta.get_field(field_name)
     except FieldDoesNotExist:
         return False
 
-    if field.remote_field and isinstance(field.remote_field, models.ManyToManyRel):
-        default_manager = field.remote_field.model._default_manager
-        if hasattr(default_manager, 'get_by_natural_key'):
-            return  True
-
-    return False
+    return field.remote_field and isinstance(field.remote_field, models.ManyToManyRel)
