@@ -11,7 +11,12 @@ class PagesManager(models.Manager):
         return self.get(key=key)
 
 
-class Dumpable:
+class DjangoPagesModel(models.Model):
+    objects = PagesManager()
+
+    class Meta:
+        abstract = True
+
     def dump_to_file(self):
         filename = '{}{}'.format(self.key, self.content_format)
         app = apps.app_configs[self._meta.app_label]
@@ -30,24 +35,21 @@ class Dumpable:
         return (self.key,)
 
 
-class MetadataModel(models.Model, Dumpable):
+class MetadataModel(DjangoPagesModel):
     key = models.CharField(max_length=255)
 
-    objects = PagesManager()
-
     content_format = '.yml'
+
     model_type = 'metadata'
 
     class Meta:
         abstract = True
 
 
-class PageModel(models.Model, Dumpable):
+class PageModel(DjangoPagesModel):
     key = models.CharField(max_length=255)
     content = models.TextField()
     content_format = models.CharField(max_length=255)
-
-    objects = PagesManager()
 
     model_type = 'pages'
 
