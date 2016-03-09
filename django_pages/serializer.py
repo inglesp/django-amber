@@ -6,10 +6,10 @@ from django.apps import apps
 from django.db import models
 from django.core.exceptions import FieldDoesNotExist
 from django.core.serializers.base import DeserializationError
-from django.core.serializers.python import (
-    Deserializer as PythonDeserializer, Serializer as PythonSerializer,
-)
+from django.core.serializers.python import Serializer as PythonSerializer
 from django.core.serializers.pyyaml import DjangoSafeDumper
+
+from .python_serializer import Deserializer as PythonDeserializer
 
 
 class Serializer(PythonSerializer):

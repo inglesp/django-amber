@@ -1,8 +1,11 @@
 import os
 import shutil
+from unittest.mock import patch
 
 from django.core import management, serializers
 from django.test import TestCase, override_settings
+
+from django_pages.python_serializer import Deserializer as PythonDeserializer
 
 from .models import Article, Author, Tag
 
@@ -227,6 +230,23 @@ class TestLoadData(DjangoPagesTestCase):
         self.assertEqual(obj.title, 'All about Django')
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
+
+
+@patch('django.core.serializers.json.PythonDeserializer', PythonDeserializer)
+class TestLoadDataForwardReferences(TestCase):
+    def test_fk_forward_references(self):
+        path = os.path.join('tests', 'test-files', 'forward-references',
+                            'forward_reference_fk.json')
+        management.call_command('loaddata', path, verbosity=0)
+        obj = Author.objects.get(key='john')
+        self.assertEqual(obj.editor.key, 'jane')
+
+    def test_m2m_forward_references(self):
+        path = os.path.join('tests', 'test-files', 'forward-references',
+                            'forward_reference_m2m.json')
+        management.call_command('loaddata', path, verbosity=0)
+        obj = Author.objects.get(key='john')
+        self.assertEqual([tag.key for tag in obj.tags.all()], ['django', 'python'])
 
 
 class TestDumpToFile(DjangoPagesTestCase):
