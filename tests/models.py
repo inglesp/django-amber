@@ -11,7 +11,7 @@ class Author(MetadataModel):
 class Article(PageModel):
     title = models.CharField(max_length=255)
     author = models.ForeignKey(Author, null=True)
-    tags = models.ManyToManyField('Tag', related_name='article', null=True)
+    tags = models.ManyToManyField('Tag', related_name='articles', null=True)
 
 
 class Tag(MetadataModel):
