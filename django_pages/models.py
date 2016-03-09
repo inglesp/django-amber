@@ -17,10 +17,14 @@ class DjangoPagesModel(models.Model):
     class Meta:
         abstract = True
 
+    @classmethod
+    def dump_dir_path(cls):
+        app_config = apps.get_app_config(cls._meta.app_label)
+        return os.path.join(app_config.path, cls.model_type, cls._meta.model_name)
+
     def dump_to_file(self):
         filename = '{}{}'.format(self.key, self.content_format)
-        app = apps.app_configs[self._meta.app_label]
-        dir_path = os.path.join(app.path, self.model_type, self._meta.model_name)
+        dir_path = self.dump_dir_path()
         os.makedirs(dir_path, exist_ok=True)
         path = os.path.join(dir_path, filename)
 
