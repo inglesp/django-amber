@@ -18,6 +18,30 @@ def get_path(model_name, filename):
     return os.path.join('tests', model_type, model_name, filename)
 
 
+def get_test_file_path(model_name, filename):
+    if model_name == 'article':
+        model_type = 'pages'
+    elif model_name == 'author':
+        model_type = 'metadata'
+    else:
+        assert False
+
+    return os.path.join('tests', 'test-files', model_type, model_name, filename)
+
+
+def copy_test_files_into_place():
+    for model_type in ['metadata', 'pages']:
+        shutil.copytree(
+            os.path.join('tests', 'test-files', model_type),
+            os.path.join('tests', model_type)
+        )
+
+
+def clear_test_files():
+    for model_type in ['metadata', 'pages']:
+        shutil.rmtree(os.path.join('tests', model_type), ignore_errors=True)
+
+
 def create_author(**kwargs):
     attrs = {
         'key': 'peter',
@@ -66,6 +90,12 @@ class TestModel(TestCase):
 
 
 class TestDeserialization(TestCase):
+    def setUp(self):
+        copy_test_files_into_place()
+
+    def tearDown(selt):
+        clear_test_files()
+
     def deserialize(self, model_name, filename):
         path = get_path(model_name, filename)
         with open(path, 'rb') as f:
@@ -143,6 +173,12 @@ class TestDeserialization(TestCase):
 
 
 class TestSerialization(TestCase):
+    def setUp(self):
+        copy_test_files_into_place()
+
+    def tearDown(selt):
+        clear_test_files()
+
     def _test_roundtrip(self, model_name, filename):
         path = get_path(model_name, filename)
         with open(path, 'rb') as f:
@@ -181,6 +217,12 @@ class TestSerialization(TestCase):
 
 
 class TestLoadData(TestCase):
+    def setUp(self):
+        copy_test_files_into_place()
+
+    def tearDown(selt):
+        clear_test_files()
+
     def test_metadata_loaddata(self):
         path = get_path('author', 'valid.yml')
         management.call_command('loaddata', path, verbosity=0)
@@ -201,13 +243,19 @@ class TestLoadData(TestCase):
 
 
 class TestDumpToFile(TestCase):
+    def setUp(self):
+        clear_test_files()
+
+    def tearDown(self):
+        clear_test_files()
+
     def _test_dump_to_file(self, model_name, filename):
         if model_name == 'article':
             actual_path = get_path(model_name, 'django.md')
-            expected_path = get_path(model_name, filename).replace('pages', 'pages.bak')
+            expected_path = get_test_file_path(model_name, filename)
         elif model_name == 'author':
             actual_path = get_path(model_name, 'peter.yml')
-            expected_path = get_path(model_name, filename).replace('metadata', 'metadata.bak')
+            expected_path = get_test_file_path(model_name, filename)
         else:
             assert False
 
@@ -256,33 +304,3 @@ class TestDumpToFile(TestCase):
         obj.dump_to_file()
 
         self._test_dump_to_file('article', 'with_many_to_many_field.md')
-
-    def setUp(self):
-        shutil.move(
-            os.path.join('tests', 'metadata'),
-            os.path.join('tests', 'metadata.bak')
-        )
-        shutil.move(
-            os.path.join('tests', 'pages'),
-            os.path.join('tests', 'pages.bak')
-        )
-
-    def tearDown(self):
-        try:
-            shutil.rmtree(os.path.join('tests', 'metadata'))
-        except FileNotFoundError:
-            pass
-
-        try:
-            shutil.rmtree(os.path.join('tests', 'pages'))
-        except FileNotFoundError:
-            pass
-
-        shutil.move(
-            os.path.join('tests', 'metadata.bak'),
-            os.path.join('tests', 'metadata')
-        )
-        shutil.move(
-            os.path.join('tests', 'pages.bak'),
-            os.path.join('tests', 'pages')
-        )
