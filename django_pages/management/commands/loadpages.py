@@ -1,0 +1,22 @@
+import glob
+import os
+
+from django.apps import apps
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
+
+from ...models import DjangoPagesModel
+
+
+class Command(BaseCommand):
+    def handle(self, *args, **kwargs):
+        verbosity = kwargs.get('verbosity')
+
+        paths = []
+
+        for app_config in apps.get_app_configs():
+            for model in app_config.get_models():
+                if issubclass(model, DjangoPagesModel):
+                    paths.extend(glob.glob(os.path.join(model.dump_dir_path(), '*')))
+
+        call_command('loaddata', *paths, verbosity=verbosity)

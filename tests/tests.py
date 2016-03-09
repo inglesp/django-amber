@@ -1,4 +1,5 @@
 import os
+import glob
 import shutil
 from unittest.mock import patch
 
@@ -28,13 +29,18 @@ def get_test_file_path(model_name, filename):
     return os.path.join('tests', 'test-files', model_type, model_name, filename)
 
 
-def set_up_dumped_data():
+def set_up_dumped_data(valid_only=False):
     clear_dumped_data()
+
     for model_type in ['metadata', 'pages']:
         shutil.copytree(
             os.path.join('tests', 'test-files', model_type),
             os.path.join('tests', model_type)
         )
+
+    if valid_only:
+        for path in glob.glob(os.path.join('tests', '*', '*', 'invalid_*')):
+            os.remove(path)
 
 
 def clear_dumped_data():
@@ -166,7 +172,7 @@ class TestDeserialization(DjangoPagesTestCase):
 
     def test_page_deserialization_with_missing_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
-            self.deserialize('article', 'missing_content.md')
+            self.deserialize('article', 'invalid_missing_content.md')
 
 
 class TestSerialization(DjangoPagesTestCase):
@@ -292,3 +298,35 @@ class TestDumpPages(DjangoPagesTestCase):
 
         management.call_command('dumppages')
         self.assertFalse(os.path.exists(path))
+
+
+class TestLoadPages(DjangoPagesTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestLoadPages, cls).setUpClass()
+        set_up_dumped_data(valid_only=True)
+
+    def test_loadpages(self):
+        self.assertEqual(Article.objects.count(), 0)
+        self.assertEqual(Author.objects.count(), 0)
+        self.assertEqual(Tag.objects.count(), 0)
+
+        management.call_command('loadpages', verbosity=0)
+
+        self.assertEqual(Article.objects.count(), 2)
+        self.assertEqual(Author.objects.count(), 2)
+        self.assertEqual(Tag.objects.count(), 2)
+
+        obj = Author.objects.get(key='john')
+        self.assertEqual(obj.key, 'john')
+        self.assertEqual(obj.name, 'John Jones')
+        self.assertEqual(obj.editor.key, 'jane')
+        self.assertEqual([tag.key for tag in obj.tags.all()], ['django', 'python'])
+
+        obj = Article.objects.get(key='django')
+        self.assertEqual(obj.key, 'django')
+        self.assertEqual(obj.content_format, '.md')
+        self.assertEqual(obj.content, 'This is an article about *Django*.\n')
+        self.assertEqual(obj.title, 'All about Django')
+        self.assertEqual(obj.author.key, 'jane')
+        self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
