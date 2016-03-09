@@ -34,6 +34,9 @@ class DjangoPagesModel(models.Model):
     def natural_key(self):
         return (self.key,)
 
+    def __str__(self):
+        return self.key
+
 
 class MetadataModel(DjangoPagesModel):
     key = models.CharField(max_length=255)
