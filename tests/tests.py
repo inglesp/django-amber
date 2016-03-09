@@ -245,3 +245,30 @@ class TestDumpToFile(DjangoPagesTestCase):
     def test_page_dump_to_file(self):
         self.article1.dump_to_file()
         self.check_dumped_output_correct('article', 'django.md')
+
+
+class TestDumpPages(DjangoPagesTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.create_model_instances()
+
+    def setUp(self):
+        clear_dumped_data()
+
+    def test_dumppages(self):
+        management.call_command('dumppages')
+        self.check_dumped_output_correct('author', 'jane.yml')
+        self.check_dumped_output_correct('author', 'john.yml')
+        self.check_dumped_output_correct('tag', 'django.yml')
+        self.check_dumped_output_correct('tag', 'python.yml')
+        self.check_dumped_output_correct('article', 'django.md')
+        self.check_dumped_output_correct('article', 'python.md')
+
+    def test_dumppages_removes_existing_files(self):
+        path = get_path('article', 'flask.md')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w'):
+            pass
+
+        management.call_command('dumppages')
+        self.assertFalse(os.path.exists(path))
