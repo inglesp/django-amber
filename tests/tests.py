@@ -110,11 +110,6 @@ class TestDeserialization(DjangoPagesTestCase):
         super(TestDeserialization, cls).setUpClass()
         set_up_dumped_data()
 
-    @classmethod
-    def tearDownClass(cls):
-        clear_dumped_data()
-        super(TestDeserialization, cls).tearDownClass()
-
     def deserialize(self, model_name, filename):
         path = get_path(model_name, filename)
         with open(path, 'rb') as f:
@@ -202,11 +197,6 @@ class TestLoadData(DjangoPagesTestCase):
     def setUpClass(cls):
         super(TestLoadData, cls).setUpClass()
         set_up_dumped_data()
-
-    @classmethod
-    def tearDownClass(cls):
-        clear_dumped_data()
-        super(TestLoadData, cls).tearDownClass()
 
     def test_metadata_loaddata(self):
         Author.objects.create(key='jane', name='Jane Smith')
