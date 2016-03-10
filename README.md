@@ -14,7 +14,7 @@ A work in progress.
 
 Install dependencies:
 
-    pip install -r requirements-dev.txt
+    pip install -r requirements.txt
 
 Run tests:
 
