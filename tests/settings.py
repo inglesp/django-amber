@@ -11,6 +11,7 @@ DATABASES = {
     },
 }
 
+# TODO remove the need for this
 SERIALIZATION_MODULES = {
     'md': 'django_pages.serializer',
     'yml': 'django_pages.serializer',
