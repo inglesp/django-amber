@@ -1,0 +1,15 @@
+{% extends 'tests/base.html' %}
+
+{% block content %}
+<h1>Articles</h1>
+
+<ul>
+    {% for article in article_list %}
+    <li>
+        <a href="{% url 'article_detail' article.key %}">{{ article.title }}</a>
+        by
+        <a href="{% url 'author_detail' article.author.key %}">{{ article.author.name }}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

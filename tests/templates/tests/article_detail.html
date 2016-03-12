@@ -1,0 +1,11 @@
+{% extends 'tests/base.html' %}
+
+{% load markdown_deux_tags %}
+
+{% block content %}
+<h1>{{ article.title }}</h1>
+
+<div>by <a href="{% url 'author_detail' article.author.key %}">{{ article.author.name }}</a></div>
+
+<div>{{ article.content|markdown }}</div>
+{% endblock %}

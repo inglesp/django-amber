@@ -1,0 +1,10 @@
+{% extends 'tests/base.html' %}
+
+{% block content %}
+<h1>Hello World</h1>
+
+<ul>
+    <li><a href="{% url 'article_list' %}">Articles</a>
+    <li><a href="{% url 'author_list' %}">Authors</a>
+</ul>
+{% endblock %}
