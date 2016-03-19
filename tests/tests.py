@@ -1,4 +1,5 @@
 import os
+from filecmp import dircmp
 import glob
 import shutil
 from unittest.mock import patch
@@ -330,3 +331,26 @@ class TestLoadPages(DjangoPagesTestCase):
         self.assertEqual(obj.title, 'All about Django')
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
+
+
+class TestBuildSite(DjangoPagesTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestBuildSite, cls).setUpClass()
+        set_up_dumped_data(valid_only=True)
+
+    def test_buildsite(self):
+        management.call_command('buildsite', verbosity=0)
+        diff = dircmp('output', os.path.join('tests', 'expected-output'))
+        self.assertTrue(
+            len(diff.diff_files) == 0,
+            'The following files did not match: {}'.format(diff.diff_files)
+        )
+        self.assertTrue(
+            len(diff.left_only) == 0,
+            'The following files were unexpectedly present: {}'.format(diff.left_only)
+        )
+        self.assertTrue(
+            len(diff.right_only) == 0,
+            'The following files were not present: {}'.format(diff.right_only)
+        )
