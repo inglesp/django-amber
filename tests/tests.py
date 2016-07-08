@@ -1,12 +1,15 @@
-import os
 from filecmp import dircmp
 import glob
+import os
 import shutil
+import time
 from unittest.mock import patch
 
 from django.core import management, serializers
+from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, override_settings
 
+from django_pages.management.commands import serve
 from django_pages.python_serializer import Deserializer as PythonDeserializer
 
 from .models import Article, Author, Tag
@@ -48,6 +51,15 @@ def clear_dumped_data():
     for model_type in ['metadata', 'pages']:
         shutil.rmtree(os.path.join('tests', model_type), ignore_errors=True)
 
+
+valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
+    'tests/metadata/author/jane.yml',
+    'tests/metadata/author/john.yml',
+    'tests/metadata/tag/django.yml',
+    'tests/metadata/tag/python.yml',
+    'tests/pages/article/django.md',
+    'tests/pages/article/python.md',
+]]
 
 class DjangoPagesTestCase(TestCase):
     @classmethod
@@ -354,3 +366,48 @@ class TestBuildSite(DjangoPagesTestCase):
             len(diff.right_only) == 0,
             'The following files were not present: {}'.format(diff.right_only)
         )
+
+
+class TestServeDynamic(DjangoPagesTestCase):
+    def test_get_mtimes(self):
+        set_up_dumped_data(valid_only=True)
+
+        for ix, path in enumerate(valid_data_paths):
+            t = 1400000000 + ix  # seconds since epoch
+            os.utime(path, (t, t))
+
+        mtimes = serve.get_mtimes()
+
+        self.assertEqual(len(mtimes), len(valid_data_paths))
+
+        for ix, path in enumerate(valid_data_paths):
+            t = 1400000000 + ix  # seconds since epoch
+            self.assertEqual(mtimes[path], t)
+
+    def test_compare_mtimes(self):
+        old_mtimes = {
+            'unchanged': 1234,
+            'changed': 2345,
+            'missing': 3456,
+        }
+
+        new_mtimes = {
+            'unchanged': 1234,
+            'changed': 4567,
+            'added': 5678,
+        }
+
+        changed_paths, missing_paths = serve.compare_mtimes(old_mtimes, new_mtimes)
+        self.assertEqual(set(changed_paths), {'changed', 'added'})
+        self.assertEqual(set(missing_paths), {'missing'})
+
+    def test_load_changed_when_nothing_has_changed(self):
+        # Test that no exceptions are raised
+        serve.load_changed([])
+
+    def test_remove_missing(self):
+        self.create_model_instances()
+        article_id = self.article2.pk
+        serve.remove_missing([valid_data_paths[-1]])
+        with self.assertRaises(ObjectDoesNotExist):
+            Article.objects.get(pk=article_id)
