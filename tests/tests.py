@@ -3,7 +3,7 @@ import glob
 import os
 import shutil
 from threading import Thread
-import time
+from time import sleep
 from unittest.mock import patch
 
 import requests
@@ -452,5 +452,16 @@ class TestServeDynamic2(TransactionTestCase):
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <em>Django</em>.', rsp.text)
 
-        with open('', 'w') as f:
-            f.write
+        path = get_path('article', 'django.md')
+
+        with open(path) as f:
+            contents = f.read()
+
+        with open(path, 'w') as f:
+            f.write(contents.replace('*Django*', '**Django**'))
+
+        sleep(0.5)
+
+        rsp = requests.get('http://localhost:8080/articles/django/')
+        self.assertTrue(rsp.ok)
+        self.assertIn('This is an article about <strong>Django</strong>.', rsp.text)
