@@ -351,21 +351,30 @@ class TestBuildSite(DjangoPagesTestCase):
         super(TestBuildSite, cls).setUpClass()
         set_up_dumped_data(valid_only=True)
 
-    def test_buildsite(self):
-        management.call_command('buildsite', verbosity=0)
-        diff = dircmp('output', os.path.join('tests', 'expected-output'))
+    def assertDirectoriesEqual(self, path1, path2):
+        diff = dircmp(path1, path2)
+
         self.assertTrue(
             len(diff.diff_files) == 0,
-            'The following files did not match: {}'.format(diff.diff_files)
+            'The following files in {} and {} did not match: {}'.format(path1, path2, diff.diff_files)
         )
         self.assertTrue(
             len(diff.left_only) == 0,
-            'The following files were unexpectedly present: {}'.format(diff.left_only)
+            'The following files were unexpectedly present in {}: {}'.format(path1, diff.left_only)
         )
         self.assertTrue(
             len(diff.right_only) == 0,
-            'The following files were not present: {}'.format(diff.right_only)
+            'The following files were not present in {}: {}'.format(path1, diff.right_only)
         )
+
+        for common_dir in diff.common_dirs:
+            new_path1 = os.path.join(path1, common_dir)
+            new_path2 = os.path.join(path2, common_dir)
+            self.assertDirectoriesEqual(new_path1, new_path2)
+
+    def test_buildsite(self):
+        management.call_command('buildsite', verbosity=0)
+        diff = self.assertDirectoriesEqual('output', os.path.join('tests', 'expected-output'))
 
 
 class TestServeDynamic(DjangoPagesTestCase):
