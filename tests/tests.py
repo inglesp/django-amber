@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from django.core import management, serializers
 from django.core.exceptions import ObjectDoesNotExist
-from django.test import TestCase, override_settings
+from django.test import TestCase, TransactionTestCase, override_settings
 
 from django_pages.management.commands import serve
 from django_pages.python_serializer import Deserializer as PythonDeserializer
@@ -345,7 +345,15 @@ class TestLoadPages(DjangoPagesTestCase):
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 
 
-class TestBuildSite(DjangoPagesTestCase):
+# This needs to subclass TransactionTestCase because of some interaction
+# between threading, SQLite, and some code in TestCase, in a way that I don't
+# have time to care about right now... but I don't think it matters.
+#
+# If future-me cares, a django.db.utils.OperationalError is raised with message
+# "database table is locked: tests_article", but this gets swallowed up by
+# Django.  To see the error, drop into pdb in django.core.handlers.BaseHandler.
+# handle_uncaught_exception
+class TestBuildSite(TransactionTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestBuildSite, cls).setUpClass()
