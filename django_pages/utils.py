@@ -19,7 +19,7 @@ def run_runserver_in_thread(port=default_port):
         daemon=True,
     ).start()
 
-    wait_for_server()
+    wait_for_server(port)
 
 
 def wait_for_server(port=default_port):
@@ -33,3 +33,11 @@ def wait_for_server(port=default_port):
         sleep(0.1 * 2 ** i)
 
     raise RuntimeError('Got no response from runserver')
+
+
+def get_free_port():
+    s = socket()
+    s.bind(('', 0))
+    port = s.getsockname()[1]
+    s.close()
+    return str(port)

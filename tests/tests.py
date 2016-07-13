@@ -14,7 +14,7 @@ from django.test import TestCase, TransactionTestCase, override_settings
 
 from django_pages.management.commands import serve
 from django_pages.python_serializer import Deserializer as PythonDeserializer
-from django_pages.utils import wait_for_server
+from django_pages.utils import get_free_port, wait_for_server
 
 from .models import Article, Author, Tag
 
@@ -440,15 +440,17 @@ class TestServeDynamic2(TransactionTestCase):
         set_up_dumped_data(valid_only=True)
         management.call_command('loadpages', verbosity=0)
 
+        port = get_free_port()
+
         Thread(
             target = management.call_command,
-            args=('serve', '8080'),
+            args=('serve', port),
             daemon=True,
         ).start()
 
-        wait_for_server('8080')
+        wait_for_server(port)
 
-        rsp = requests.get('http://localhost:8080/articles/django/')
+        rsp = requests.get('http://localhost:{}/articles/django/'.format(port))
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <em>Django</em>.', rsp.text)
 
@@ -462,6 +464,6 @@ class TestServeDynamic2(TransactionTestCase):
 
         sleep(0.5)
 
-        rsp = requests.get('http://localhost:8080/articles/django/')
+        rsp = requests.get('http://localhost:{}/articles/django/'.format(port))
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <strong>Django</strong>.', rsp.text)
