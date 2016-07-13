@@ -380,6 +380,7 @@ class TestBuildSite(TransactionTestCase):
             new_path2 = os.path.join(path2, common_dir)
             self.assertDirectoriesEqual(new_path1, new_path2)
 
+    @override_settings(DEBUG=True)  # This is required for static file handling
     def test_buildsite(self):
         management.call_command('buildsite', verbosity=0)
         diff = self.assertDirectoriesEqual('output', os.path.join('tests', 'expected-output'))
