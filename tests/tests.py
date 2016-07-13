@@ -2,8 +2,11 @@ from filecmp import dircmp
 import glob
 import os
 import shutil
+from threading import Thread
 import time
 from unittest.mock import patch
+
+import requests
 
 from django.core import management, serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -11,6 +14,7 @@ from django.test import TestCase, TransactionTestCase, override_settings
 
 from django_pages.management.commands import serve
 from django_pages.python_serializer import Deserializer as PythonDeserializer
+from django_pages.utils import wait_for_server
 
 from .models import Article, Author, Tag
 
@@ -429,3 +433,24 @@ class TestServeDynamic(DjangoPagesTestCase):
         serve.remove_missing([valid_data_paths[-1]])
         with self.assertRaises(ObjectDoesNotExist):
             Article.objects.get(pk=article_id)
+
+# This needs to subclass TransactionTestCase for same reason as TestBuildSite.
+class TestServeDynamic2(TransactionTestCase):
+    def test_serve(self):
+        set_up_dumped_data(valid_only=True)
+        management.call_command('loadpages', verbosity=0)
+
+        Thread(
+            target = management.call_command,
+            args=('serve', '8080'),
+            daemon=True,
+        ).start()
+
+        wait_for_server('8080')
+
+        rsp = requests.get('http://localhost:8080/articles/django/')
+        self.assertTrue(rsp.ok)
+        self.assertIn('This is an article about <em>Django</em>.', rsp.text)
+
+        with open('', 'w') as f:
+            f.write

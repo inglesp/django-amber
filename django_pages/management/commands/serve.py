@@ -1,9 +1,12 @@
 import glob
 import os
+from time import sleep
 
 from django.apps import apps
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+
+from django_pages.utils import run_runserver_in_thread
 
 
 def load_changed(changed_paths):
@@ -62,3 +65,27 @@ def compare_mtimes(old_mtimes, new_mtimes):
             changed_paths.append(filename)
 
     return changed_paths, missing_paths
+
+
+class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument('port', nargs='?',  help='Optional port number')
+
+    def handle(self, *args, **kwargs):
+        port = kwargs.get('port')
+        run_runserver_in_thread(port)
+
+        mtimes = get_mtimes()
+
+        while True:
+            try:
+                sleep(0.1)
+            except KeyboardInterrupt:
+                break
+
+            new_mtimes = get_mtimes()
+            changed_paths, missing_paths = compare_mtimes(mtimes, new_mtimes)
+            load_changed(changed_paths)
+            mtimes = new_mtimes
+
+        print()
