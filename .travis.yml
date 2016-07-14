@@ -1,5 +1,4 @@
 language: python
 python: "3.5"
 install: pip install -r requirements-test.txt
-before_script: python manage.py migrate
-script: python manage.py test
+script: python manage.py test -v3
