@@ -86,6 +86,7 @@ class Command(BaseCommand):
             new_mtimes = get_mtimes()
             changed_paths, missing_paths = compare_mtimes(mtimes, new_mtimes)
             load_changed(changed_paths)
+            remove_missing(missing_paths)
             mtimes = new_mtimes
 
         print()

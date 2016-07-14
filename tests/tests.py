@@ -467,3 +467,10 @@ class TestServeDynamic2(TransactionTestCase):
         rsp = requests.get('http://localhost:{}/articles/django/'.format(port))
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <strong>Django</strong>.', rsp.text)
+
+        os.remove(path)
+
+        sleep(0.5)
+
+        rsp = requests.get('http://localhost:{}/articles/django/'.format(port))
+        self.assertEqual(rsp.status_code, 404)
