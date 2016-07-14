@@ -10,8 +10,6 @@ from ...models import DjangoPagesModel, load_from_file
 
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
-        verbosity = kwargs.get('verbosity')
-
         paths = []
 
         for app_config in apps.get_app_configs():
