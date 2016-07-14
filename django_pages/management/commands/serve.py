@@ -3,15 +3,14 @@ import os
 from time import sleep
 
 from django.apps import apps
-from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
+from django_pages.models import load_from_file
 from django_pages.utils import run_runserver_in_thread
 
 
 def load_changed(changed_paths):
-    if changed_paths:
-        call_command('loaddata', *changed_paths)
+    load_from_file(changed_paths)
 
     # TODO  Decide what to do if loading data raises DeserializationError.
 

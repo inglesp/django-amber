@@ -267,7 +267,7 @@ class DeserializedObject(object):
                 except Exception as e:
                     opts = self.object._meta
                     label = '{}.{}'.format(opts.app_label, opts.model_name)
-                    raise DeserializationError.WithData(e, label, self.object.pk, pk)
+                    raise base.DeserializationError.WithData(e, label, self.object.pk, pk)
                 self.m2m_data[field.name] = m2m_field_values
 
             elif field.remote_field and isinstance(field.remote_field, models.ManyToOneRel):
@@ -279,7 +279,7 @@ class DeserializedObject(object):
                 except Exception as e:
                     opts = self.object._meta
                     label = '{}.{}'.format(opts.app_label, opts.model_name)
-                    raise DeserializationError.WithData(e, label, self.object.pk, field_value)
+                    raise base.DeserializationError.WithData(e, label, self.object.pk, field_value)
                 value = getattr(obj, field_name)
                 if model._meta.pk.remote_field:
                     value = value.pk

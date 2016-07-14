@@ -5,7 +5,7 @@ from django.apps import apps
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from ...models import DjangoPagesModel
+from ...models import DjangoPagesModel, load_from_file
 
 
 class Command(BaseCommand):
@@ -19,4 +19,4 @@ class Command(BaseCommand):
                 if issubclass(model, DjangoPagesModel):
                     paths.extend(glob.glob(os.path.join(model.dump_dir_path(), '*')))
 
-        call_command('loaddata', *paths, verbosity=verbosity)
+        load_from_file(paths)

@@ -1,9 +1,9 @@
 import os
 
 from django.apps import apps
-from django.db import models
+from django.db import models, transaction
 
-from .serializer import Serializer
+from .serializer import Deserializer, Serializer
 
 
 class PagesManager(models.Manager):
@@ -62,3 +62,19 @@ class PageModel(DjangoPagesModel):
 
     class Meta:
         abstract = True
+
+
+def load_from_file(paths):
+    objs_with_deferred_fields = []
+
+    with transaction.atomic():
+        for path in paths:
+            with open(path, 'rb') as f:
+                for obj in Deserializer(f, handle_forward_references=True):
+                    obj.save()
+
+                    if obj.deferred_fields:
+                        objs_with_deferred_fields.append(obj)
+
+        for obj in objs_with_deferred_fields:
+            obj.save_deferred_fields()

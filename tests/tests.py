@@ -13,7 +13,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, TransactionTestCase, override_settings
 
 from django_pages.management.commands import serve
+from django_pages.models import load_from_file
 from django_pages.python_serializer import Deserializer as PythonDeserializer
+from django_pages.serializer import Deserializer, Serializer
 from django_pages.utils import get_free_port, wait_for_server
 
 from .models import Article, Author, Tag
@@ -139,7 +141,7 @@ class TestDeserialization(DjangoPagesTestCase):
     def deserialize(self, model_name, filename):
         path = get_path(model_name, filename)
         with open(path, 'rb') as f:
-            return next(serializers.deserialize('md', f))
+            return next(Deserializer(f))
 
     def test_metadata_deserialization(self):
         Author.objects.create(key='jane', name='Jane Smith')
@@ -198,11 +200,8 @@ class TestSerialization(DjangoPagesTestCase):
         cls.create_model_instances()
 
     def serialize(self, obj, content_format):
-        return serializers.serialize(
-            content_format,
-            [obj],
-            use_natural_foreign_keys=True
-        )
+        serializer = Serializer()
+        return serializer.serialize([obj], use_natural_foreign_keys=True)
 
     def test_metadata_serialization(self):
         # We use author2 here since it has a foreign key another author
@@ -218,19 +217,19 @@ class TestSerialization(DjangoPagesTestCase):
         self.assertEqual(actual, expected)
 
 
-class TestLoadData(DjangoPagesTestCase):
+class TestLoadFromFile(DjangoPagesTestCase):
     @classmethod
     def setUpClass(cls):
-        super(TestLoadData, cls).setUpClass()
+        super(TestLoadFromFile, cls).setUpClass()
         set_up_dumped_data()
 
-    def test_metadata_loaddata(self):
+    def test_metadata_load_from_file(self):
         Author.objects.create(key='jane', name='Jane Smith')
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
 
         path = get_path('author', 'john.yml')
-        management.call_command('loaddata', path, verbosity=0)
+        load_from_file([path])
         obj = Author.objects.get(key='john')
 
         self.assertEqual(obj.key, 'john')
@@ -238,13 +237,13 @@ class TestLoadData(DjangoPagesTestCase):
         self.assertEqual(obj.editor.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django', 'python'])
 
-    def test_page_loaddata(self):
+    def test_page_load_from_file(self):
         Author.objects.create(key='jane', name='Jane Smith')
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
 
         path = get_path('article', 'django.md')
-        management.call_command('loaddata', path, verbosity=0)
+        load_from_file([path])
         obj = Article.objects.get(key='django')
 
         self.assertEqual(obj.key, 'django')
@@ -254,21 +253,28 @@ class TestLoadData(DjangoPagesTestCase):
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 
-
-@patch('django.core.serializers.json.PythonDeserializer', PythonDeserializer)
-class TestLoadDataForwardReferences(TestCase):
     def test_fk_forward_references(self):
-        path = os.path.join('tests', 'test-files', 'forward-references',
-                            'forward_reference_fk.json')
-        management.call_command('loaddata', path, verbosity=0)
+        Tag.objects.create(key='django', name='Django')
+        Tag.objects.create(key='python', name='Python')
+
+        paths = [
+            get_path('author', 'john.yml'),
+            get_path('author', 'jane.yml'),
+        ]
+        load_from_file(paths)
+
         obj = Author.objects.get(key='john')
         self.assertEqual(obj.editor.key, 'jane')
 
     def test_m2m_forward_references(self):
-        path = os.path.join('tests', 'test-files', 'forward-references',
-                            'forward_reference_m2m.json')
-        management.call_command('loaddata', path, verbosity=0)
-        obj = Author.objects.get(key='john')
+        paths = [
+            get_path('author', 'jane.yml'),
+            get_path('tag', 'django.yml'),
+            get_path('tag', 'python.yml'),
+        ]
+        load_from_file(paths)
+
+        obj = Author.objects.get(key='jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django', 'python'])
 
 
