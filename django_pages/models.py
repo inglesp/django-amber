@@ -42,7 +42,7 @@ class DjangoPagesModel(models.Model):
         return self.key
 
 
-class MetadataModel(DjangoPagesModel):
+class ModelWithoutContent(DjangoPagesModel):
     key = models.CharField(max_length=255)
 
     content_format = '.yml'
@@ -53,7 +53,7 @@ class MetadataModel(DjangoPagesModel):
         abstract = True
 
 
-class PageModel(DjangoPagesModel):
+class ModelWithContent(DjangoPagesModel):
     key = models.CharField(max_length=255)
     content = models.TextField()
     content_format = models.CharField(max_length=255)

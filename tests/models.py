@@ -1,18 +1,18 @@
 from django.db import models
-from django_pages.models import MetadataModel, PageModel
+from django_pages.models import ModelWithContent, ModelWithoutContent
 
 
-class Author(MetadataModel):
+class Article(ModelWithContent):
+    title = models.CharField(max_length=255)
+    author = models.ForeignKey('Author', null=True)
+    tags = models.ManyToManyField('Tag', related_name='articles')
+
+
+class Author(ModelWithoutContent):
     name = models.CharField(max_length=255)
     editor = models.ForeignKey('Author', null=True)
     tags = models.ManyToManyField('Tag', related_name='authors')
 
 
-class Article(PageModel):
-    title = models.CharField(max_length=255)
-    author = models.ForeignKey(Author, null=True)
-    tags = models.ManyToManyField('Tag', related_name='articles')
-
-
-class Tag(MetadataModel):
+class Tag(ModelWithoutContent):
     name = models.CharField(max_length=255)
