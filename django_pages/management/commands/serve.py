@@ -40,11 +40,10 @@ def get_mtimes():
     mtimes = {}
 
     for app_config in apps.get_app_configs():
-        for model_type in ['metadata', 'pages']:
-            path = os.path.join(app_config.path, model_type, '**', '*')
-            for filename in glob.glob(path):
-                stat = os.stat(filename)
-                mtimes[filename] = stat.st_mtime
+        path = os.path.join(app_config.path, 'data', '**', '*')
+        for filename in glob.glob(path):
+            stat = os.stat(filename)
+            mtimes[filename] = stat.st_mtime
 
     return mtimes
 

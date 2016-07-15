@@ -55,7 +55,6 @@ def Deserializer(file, **options):
     path_segments = path.split(os.path.sep)
 
     app_label = path_segments[-3]
-    model_type = path_segments[-2]
     model_name = path_segments[-1]
     model = apps.get_model(app_label, model_name)
 
@@ -79,18 +78,15 @@ def Deserializer(file, **options):
             assert isinstance(field_value, list) and all(isinstance(v, str) for v in field_value)
             fields[field_name] = [[v] for v in field_value]
 
-    if model_type == 'pages':
+    if model.has_content:
         if len(parts) == 1:
             raise DeserializationError('Missing content')
 
         fields['key'], fields['content_format'] = os.path.splitext(filename)
         fields['content'] = parts[1]
 
-    elif model_type == 'metadata':
-        fields['key'], _ = os.path.splitext(filename)
-
     else:
-        assert False
+        fields['key'], _ = os.path.splitext(filename)
     
     record = {
         'model': '{}.{}'.format(app_label, model_name),

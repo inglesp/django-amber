@@ -21,32 +21,21 @@ from django_pages.utils import get_free_port, wait_for_server
 from .models import Article, Author, Tag
 
 
-def get_model_type(model_name):
-    return {
-        'article': 'pages',
-        'author': 'metadata',
-        'tag': 'metadata',
-    }[model_name]
-
-
 def get_path(model_name, filename):
-    model_type = get_model_type(model_name)
-    return os.path.join('tests', model_type, model_name, filename)
+    return os.path.join('tests', 'data', model_name, filename)
 
 
 def get_test_file_path(model_name, filename):
-    model_type = get_model_type(model_name)
-    return os.path.join('tests', 'test-files', model_type, model_name, filename)
+    return os.path.join('tests', 'test-files', 'data', model_name, filename)
 
 
 def set_up_dumped_data(valid_only=False):
     clear_dumped_data()
 
-    for model_type in ['metadata', 'pages']:
-        shutil.copytree(
-            os.path.join('tests', 'test-files', model_type),
-            os.path.join('tests', model_type)
-        )
+    shutil.copytree(
+        os.path.join('tests', 'test-files', 'data'),
+        os.path.join('tests', 'data')
+    )
 
     if valid_only:
         for path in glob.glob(os.path.join('tests', '*', '*', 'invalid_*')):
@@ -54,17 +43,16 @@ def set_up_dumped_data(valid_only=False):
 
 
 def clear_dumped_data():
-    for model_type in ['metadata', 'pages']:
-        shutil.rmtree(os.path.join('tests', model_type), ignore_errors=True)
+    shutil.rmtree(os.path.join('tests', 'data'), ignore_errors=True)
 
 
 valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
-    'tests/metadata/author/jane.yml',
-    'tests/metadata/author/john.yml',
-    'tests/metadata/tag/django.yml',
-    'tests/metadata/tag/python.yml',
-    'tests/pages/article/django.md',
-    'tests/pages/article/python.md',
+    'tests/data/author/jane.yml',
+    'tests/data/author/john.yml',
+    'tests/data/tag/django.yml',
+    'tests/data/tag/python.yml',
+    'tests/data/article/django.md',
+    'tests/data/article/python.md',
 ]]
 
 class DjangoPagesTestCase(TestCase):
@@ -119,16 +107,16 @@ class TestModel(DjangoPagesTestCase):
     def setUpTestData(cls):
         cls.create_model_instances()
 
-    def test_metadata_natural_key(self):
+    def test_natural_key_without_content(self):
         self.assertEqual(self.author1.natural_key(), ('jane',))
 
-    def test_metadata_get_by_natural_key(self):
+    def test_get_by_natural_key_without_content(self):
         self.assertEqual(Author.objects.get_by_natural_key('john'), self.author2)
 
-    def test_page_natural_key(self):
+    def test_natural_key_with_content(self):
         self.assertEqual(self.article1.natural_key(), ('django',))
 
-    def test_page_get_by_natural_key(self):
+    def test_get_by_natural_key_with_content(self):
         self.assertEqual(Article.objects.get_by_natural_key('python'), self.article2)
 
 
@@ -143,7 +131,7 @@ class TestDeserialization(DjangoPagesTestCase):
         with open(path, 'rb') as f:
             return next(Deserializer(f))
 
-    def test_metadata_deserialization(self):
+    def test_deserialization_without_content(self):
         Author.objects.create(key='jane', name='Jane Smith')
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
@@ -157,7 +145,7 @@ class TestDeserialization(DjangoPagesTestCase):
         self.assertEqual(obj.editor.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django', 'python'])
 
-    def test_page_deserialization(self):
+    def test_deserialization_with_content(self):
         Author.objects.create(key='jane', name='Jane Smith')
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
@@ -173,23 +161,23 @@ class TestDeserialization(DjangoPagesTestCase):
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 
-    def test_metadata_deserialization_with_invalid_yaml(self):
+    def test_deserialization_with_invalid_yaml_without_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
             self.deserialize('author', 'invalid_yaml.yml')
 
-    def test_page_deserialization_with_invalid_yaml(self):
+    def test_deserialization_with_invalid_yaml_with_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
             self.deserialize('article', 'invalid_yaml.md')
 
-    def test_metadata_deserialization_with_invalid_object(self):
+    def test_deserialization_with_invalid_object_without_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
             self.deserialize('author', 'invalid_object.yml')
 
-    def test_page_deserialization_with_invalid_object(self):
+    def test_deserialization_with_invalid_object_with_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
             self.deserialize('article', 'invalid_object.md')
 
-    def test_page_deserialization_with_missing_content(self):
+    def test_deserialization_with_missing_content_with_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
             self.deserialize('article', 'invalid_missing_content.md')
 
@@ -203,14 +191,14 @@ class TestSerialization(DjangoPagesTestCase):
         serializer = Serializer()
         return serializer.serialize([obj], use_natural_foreign_keys=True)
 
-    def test_metadata_serialization(self):
+    def test_serialization_without_content(self):
         # We use author2 here since it has a foreign key another author
         actual = self.serialize(self.author2, 'yml')
         with open(get_test_file_path('author', 'john.yml')) as f:
             expected = f.read()
         self.assertEqual(actual, expected)
 
-    def test_page_serialization(self):
+    def test_serialization_with_content(self):
         actual = self.serialize(self.article1, 'md')
         with open(get_test_file_path('article', 'django.md')) as f:
             expected = f.read()
@@ -223,7 +211,7 @@ class TestLoadFromFile(DjangoPagesTestCase):
         super(TestLoadFromFile, cls).setUpClass()
         set_up_dumped_data()
 
-    def test_metadata_load_from_file(self):
+    def test_load_from_file_without_content(self):
         Author.objects.create(key='jane', name='Jane Smith')
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
@@ -237,7 +225,7 @@ class TestLoadFromFile(DjangoPagesTestCase):
         self.assertEqual(obj.editor.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django', 'python'])
 
-    def test_page_load_from_file(self):
+    def test_load_from_file_with_content(self):
         Author.objects.create(key='jane', name='Jane Smith')
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
@@ -286,12 +274,12 @@ class TestDumpToFile(DjangoPagesTestCase):
     def setUp(self):
         clear_dumped_data()
 
-    def test_metadata_dump_to_file(self):
+    def test_dump_to_file_without_content(self):
         # We use author2 here since it has a foreign key another author
         self.author2.dump_to_file()
         self.check_dumped_output_correct('author', 'john.yml')
 
-    def test_page_dump_to_file(self):
+    def test_dump_to_file_with_content(self):
         self.article1.dump_to_file()
         self.check_dumped_output_correct('article', 'django.md')
 

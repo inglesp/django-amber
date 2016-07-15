@@ -20,7 +20,7 @@ class DjangoPagesModel(models.Model):
     @classmethod
     def dump_dir_path(cls):
         app_config = apps.get_app_config(cls._meta.app_label)
-        return os.path.join(app_config.path, cls.model_type, cls._meta.model_name)
+        return os.path.join(app_config.path, 'data', cls._meta.model_name)
 
     def dump_to_file(self):
         filename = '{}{}'.format(self.key, self.content_format)
@@ -47,7 +47,7 @@ class ModelWithoutContent(DjangoPagesModel):
 
     content_format = '.yml'
 
-    model_type = 'metadata'
+    has_content = False
 
     class Meta:
         abstract = True
@@ -58,7 +58,7 @@ class ModelWithContent(DjangoPagesModel):
     content = models.TextField()
     content_format = models.CharField(max_length=255)
 
-    model_type = 'pages'
+    has_content = True
 
     class Meta:
         abstract = True
