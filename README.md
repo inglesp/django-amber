@@ -28,10 +28,11 @@ Pages then provides a way to dump the dynamically generated contents of your
 site to a tree of static files on the filesystem, so that they can be served by
 your favourite webserver or static site host.
 
-Instead of storing your data in a database, your data is serialized to files on
-the filesystem.  This means that you can keep your data under version control,
-and benefit from all the tooling which that brings.  Each model instance is
-serialized to its own file.  Serialization is documented under "Models" below.
+Additionally, instead of storing your data in a database, your data is
+serialized to files on the filesystem.  This means that you can keep your data
+under version control, and benefit from all the tooling which that brings.
+Each model instance is serialized to its own file.  Serialization is documented
+under "Models" below.
 
 
 ### Management commands
@@ -40,7 +41,7 @@ Django Pages provides several management commands for managing your
 application's data.
 
 
-#### buildsite
+#### `buildsite`
 
 You should use this command to generate a static copy of your website's pages,
 so that it can be served by a webserver or static site host.
@@ -52,7 +53,7 @@ crawls the site, following every link starting at `/`.
 The crawled pages are written to the `output` directory.
 
 
-#### serve
+#### `serve`
 
 You should use this command in development, as a beefed-up version of
 `runserver`.
@@ -73,11 +74,11 @@ accordingly.
 Once the server is terminated (via Control+C), it runs the `dumppages` command
 to dump the contents of the application's database to the filesystem.
 
-This allows you to change the contents of the serialized files by running the
-application, perhaps via the admin.
+This allows you to change the contents of the serialized files by interacting
+with the running application, perhaps via the admin.
 
 
-#### loadpages
+#### `loadpages`
 
 You probably won't need need to invoke this command directly.
 
@@ -85,7 +86,7 @@ This command deserializes the contents of the filesystem, and loads objects
 into the application's database.
 
 
-#### dumppages
+#### `dumppages`
 
 You probably won't need need to invoke this command directly.
 
@@ -96,7 +97,9 @@ filesystem.
 ### Models
 
 All models whose data is serialized to the filesystem must inherit either from
-`django_pages.models.ModelWithContent` or `django_pages.models.ModelWithoutContent`.
+`ModelWithContent` or `ModelWithoutContent`, which are [abstract base
+classes](https://docs.djangoproject.com/en/1.9/topics/db/models/#abstract-base-classes)
+defined in `django_pages.models`.
 
 What follows is a description of these classes, including the fields they
 provide to their subclasses, and details of instances of these classes are
@@ -137,7 +140,7 @@ follow three dashes (`---`), and then follows the value of the `content` field.
 #### `django_pages.models.ModelWithoutContent`
 
 Subclasses of `ModelWithoutContent` are for models whose instances represent
-objects that do not have a significant amount of content, for instance 
+objects that do not have a significant amount of content.
 
 Subclasses inherit the following field:
 
