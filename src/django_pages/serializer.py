@@ -2,6 +2,12 @@ import os.path
 
 import yaml
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
+
 from django.apps import apps
 from django.db import models
 from django.core.exceptions import FieldDoesNotExist
@@ -65,7 +71,7 @@ def Deserializer(file, **options):
     parts = data.split(separator, 1)
 
     try:
-        fields = yaml.load(parts[0], Loader=yaml.CSafeLoader)
+        fields = yaml.load(parts[0], Loader=SafeLoader)
     except yaml.YAMLError as e:
         raise DeserializationError(e)
 

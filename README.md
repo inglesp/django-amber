@@ -227,10 +227,4 @@ then run the `dumppages` command to write the data to the filesystem.)
 
 ## Development
 
-Install dependencies:
-
-    pip install -r requirements.txt
-
-Run tests:
-
-    ./manage.py test
+Run tests with `tox`.

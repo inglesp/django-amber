@@ -1,6 +1,0 @@
-Django==1.9.1
-http-crawler==0.1.1
-lxml==3.6.0
-PyYAML==3.11
-requests==2.10.0
-tinycss==0.3
