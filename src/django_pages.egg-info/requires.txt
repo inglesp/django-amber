@@ -1,4 +1,0 @@
-Django
-http-crawler
-requests
-PyYAML
