@@ -7,6 +7,7 @@ from time import sleep
 
 import requests
 
+from django.conf import settings
 from django.core import management, serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, TransactionTestCase, override_settings
@@ -381,6 +382,20 @@ class TestBuildSite(TransactionTestCase):
     def test_buildsite(self):
         management.call_command('buildsite', verbosity=0)
         self.assertDirectoriesEqual('output', os.path.join('tests', 'expected-output'))
+
+    @override_settings(DJANGO_AMBER_CNAME='amber.example.com')
+    def test_buildsite_with_cname(self):
+        management.call_command('buildsite', verbosity=0)
+        path = os.path.join('output', 'CNAME')
+        with open(path) as f:
+            self.assertEqual('amber.example.com', f.read())
+
+    @override_settings()
+    def test_buildsite_without_cname(self):
+        del settings.DJANGO_AMBER_CNAME
+        management.call_command('buildsite', verbosity=0)
+        path = os.path.join('output', 'CNAME')
+        self.assertFalse(os.path.exists(path))
 
 
 class TestServeDynamic(DjangoPagesTestCase):

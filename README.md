@@ -51,6 +51,10 @@ crawls the site, following every link starting at `/`.
 
 The crawled pages are written to the `output` directory.
 
+Additionally, if the `DJANGO_AMBER_CNAME` setting is set, a file is written to
+the `output` directory whose contents is the value of this setting.  This is
+useful for deploying to GitHub Pages.
+
 
 #### `serve`
 

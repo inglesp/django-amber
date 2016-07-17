@@ -40,3 +40,9 @@ class Command(BaseCommand):
             os.makedirs(dir_path, exist_ok=True)
             with open(os.path.join(dir_path, filename), 'wb') as f:
                 f.write(rsp.content)
+
+        cname = getattr(settings, 'DJANGO_AMBER_CNAME', None)
+
+        if cname:
+            with open(os.path.join(output_path, 'CNAME'), 'w') as f:
+                f.write(cname)
