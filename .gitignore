@@ -1,6 +1,7 @@
+*.egg-info/
 .tox
 __pycache__
 db.sqlite3
+dist
 output
 tests/data
-*.egg-info/
