@@ -1,7 +1,9 @@
 *.egg-info/
+.coverage
 .tox
 __pycache__
 db.sqlite3
 dist
+htmlcov
 output
 tests/data
