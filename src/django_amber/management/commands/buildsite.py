@@ -2,7 +2,6 @@ import os
 import shutil
 
 import http_crawler
-import requests
 
 from django.conf import settings
 from django.core.management import call_command

@@ -93,7 +93,7 @@ def Deserializer(file, **options):
 
     else:
         fields['key'], _ = os.path.splitext(filename)
-    
+
     record = {
         'model': '{}.{}'.format(app_label, model_name),
         'fields': fields,

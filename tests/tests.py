@@ -4,7 +4,6 @@ import os
 import shutil
 from threading import Thread
 from time import sleep
-from unittest.mock import patch
 
 import requests
 
@@ -14,7 +13,6 @@ from django.test import TestCase, TransactionTestCase, override_settings
 
 from django_amber.management.commands import serve
 from django_amber.models import load_from_file
-from django_amber.python_serializer import Deserializer as PythonDeserializer
 from django_amber.serializer import Deserializer, Serializer
 from django_amber.utils import get_free_port, wait_for_server
 
@@ -54,6 +52,7 @@ valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
     'tests/data/article/django.md',
     'tests/data/article/python.md',
 ]]
+
 
 class DjangoPagesTestCase(TestCase):
     @classmethod
@@ -381,7 +380,7 @@ class TestBuildSite(TransactionTestCase):
     @override_settings(DEBUG=True)  # This is required for static file handling
     def test_buildsite(self):
         management.call_command('buildsite', verbosity=0)
-        diff = self.assertDirectoriesEqual('output', os.path.join('tests', 'expected-output'))
+        self.assertDirectoriesEqual('output', os.path.join('tests', 'expected-output'))
 
 
 class TestServeDynamic(DjangoPagesTestCase):
@@ -428,6 +427,7 @@ class TestServeDynamic(DjangoPagesTestCase):
         with self.assertRaises(ObjectDoesNotExist):
             Article.objects.get(pk=article_id)
 
+
 # This needs to subclass TransactionTestCase for same reason as TestBuildSite.
 class TestServeDynamic2(TransactionTestCase):
     def test_serve(self):
@@ -437,7 +437,7 @@ class TestServeDynamic2(TransactionTestCase):
         port = get_free_port()
 
         Thread(
-            target = management.call_command,
+            target=management.call_command,
             args=('serve', port),
             daemon=True,
         ).start()

@@ -47,6 +47,7 @@ def get_mtimes():
 
     return mtimes
 
+
 def compare_mtimes(old_mtimes, new_mtimes):
     changed_paths = []
     missing_paths = []

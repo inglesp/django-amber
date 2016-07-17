@@ -25,7 +25,7 @@ def run_runserver_in_thread(port=default_port):
 def wait_for_server(port=default_port):
     for i in range(5):
         try:
-            rsp = requests.get('http://localhost:{}/'.format(port))
+            requests.get('http://localhost:{}/'.format(port))
             return
         except requests.exceptions.ConnectionError:
             pass

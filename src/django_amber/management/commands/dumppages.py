@@ -1,4 +1,3 @@
-import os
 import shutil
 
 from django.apps import apps

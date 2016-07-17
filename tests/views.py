@@ -2,6 +2,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 
 from .models import Article, Author
 
+
 class HomeView(TemplateView):
     template_name = 'tests/home_view.html'
 
