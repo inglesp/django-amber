@@ -4,6 +4,7 @@ from time import sleep
 
 from django.apps import apps
 from django.core.management.base import BaseCommand
+from django.core.management.commands.runserver import Command as RunserverCommand
 
 from django_amber.models import load_from_file
 from django_amber.utils import run_runserver_in_thread
@@ -68,7 +69,12 @@ def compare_mtimes(old_mtimes, new_mtimes):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument('port', nargs='?',  help='Optional port number')
+        parser.add_argument(
+            'port',
+            nargs='?',
+            default=RunserverCommand.default_port,
+            help='Optional port number'
+        )
 
     def handle(self, *args, **kwargs):
         port = kwargs.get('port')
