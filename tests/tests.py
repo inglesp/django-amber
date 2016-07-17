@@ -12,11 +12,11 @@ from django.core import management, serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, TransactionTestCase, override_settings
 
-from django_pages.management.commands import serve
-from django_pages.models import load_from_file
-from django_pages.python_serializer import Deserializer as PythonDeserializer
-from django_pages.serializer import Deserializer, Serializer
-from django_pages.utils import get_free_port, wait_for_server
+from django_amber.management.commands import serve
+from django_amber.models import load_from_file
+from django_amber.python_serializer import Deserializer as PythonDeserializer
+from django_amber.serializer import Deserializer, Serializer
+from django_amber.utils import get_free_port, wait_for_server
 
 from .models import Article, Author, Tag
 

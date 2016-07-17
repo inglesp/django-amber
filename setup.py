@@ -11,20 +11,20 @@ def read(*parts):
 
 VERSION = re.search(
     "^__version__ = '(.*)'$",
-    read('src', 'django_pages', '__init__.py'),
+    read('src', 'django_amber', '__init__.py'),
     re.MULTILINE
 ).group(1)
 
 if __name__ == '__main__':
     setup(
-        name='django-pages',
+        name='django-amber',
         version=VERSION,
         description='A Django-powered static site generator',
         long_description=read('README.md'),
         packages=find_packages(where='src'),
         package_dir={'': 'src'},
         install_requires=['Django', 'http-crawler', 'requests', 'PyYAML'],
-        url='http://github.com/inglesp/django-pages',
+        url='http://github.com/inglesp/django-amber',
         author='Peter Inglesby',
         author_email='peter.inglesby@gmail.com',
         license='License :: OSI Approved :: MIT License',

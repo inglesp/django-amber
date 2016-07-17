@@ -9,7 +9,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'markdown_deux',
     'tests',
-    'django_pages',
+    'django_amber',
 ]
 
 SECRET_KEY = '?'

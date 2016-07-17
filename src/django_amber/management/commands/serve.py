@@ -5,8 +5,8 @@ from time import sleep
 from django.apps import apps
 from django.core.management.base import BaseCommand
 
-from django_pages.models import load_from_file
-from django_pages.utils import run_runserver_in_thread
+from django_amber.models import load_from_file
+from django_amber.utils import run_runserver_in_thread
 
 
 def load_changed(changed_paths):

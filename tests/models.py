@@ -1,5 +1,5 @@
 from django.db import models
-from django_pages.models import ModelWithContent, ModelWithoutContent
+from django_amber.models import ModelWithContent, ModelWithoutContent
 
 
 class Article(ModelWithContent):

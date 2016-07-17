@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from django_pages.utils import get_free_port, run_runserver_in_thread
+from django_amber.utils import get_free_port, run_runserver_in_thread
 
 
 class Command(BaseCommand):

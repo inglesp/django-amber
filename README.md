@@ -1,30 +1,29 @@
-# Django Pages
+# Django Amber
 
-[![Build Status](https://travis-ci.org/inglesp/django-pages.svg?branch=master)](https://travis-ci.org/inglesp/django-pages)
+[![Build Status](https://travis-ci.org/inglesp/django-amber.svg?branch=master)](https://travis-ci.org/inglesp/django-amber)
 
 Harness the power of Django to build your static sites!
 
-
 ## Status
 
-Alpha-ish.  Django Pages is not yet used in production anywhere.
+Alpha-ish.  Django Amber is not yet used in production anywhere.
 
 
 ## Installation
 
-Django Pages is not yet `pip install`-able, but it will be!
+Django Amber is not yet `pip install`-able, but it will be!
 
 
 ## Usage
 
 ### The basic idea
 
-Django Pages is a static site generator, in the mould of
+Django Amber is a static site generator, in the mould of
 [Jekyll](https://jekyllrb.com/) or [Pelican](http://docs.getpelican.com/)
 
-With Django Pages, you build your website using Django, making use of the full
+With Django Amber, you build your website using Django, making use of the full
 Django toolkit: models, views, urlconfs, templates, tests, and so on.  Django
-Pages then provides a way to dump the dynamically generated contents of your
+Amber then provides a way to dump the dynamically generated contents of your
 site to a tree of static files on the filesystem, so that they can be served by
 your favourite webserver or static site host.
 
@@ -37,7 +36,7 @@ under "Models" below.
 
 ### Management commands
 
-Django Pages provides several management commands for managing your
+Django Amber provides several management commands for managing your
 application's data.
 
 
@@ -99,14 +98,14 @@ filesystem.
 All models whose data is serialized to the filesystem must inherit either from
 `ModelWithContent` or `ModelWithoutContent`, which are [abstract base
 classes](https://docs.djangoproject.com/en/1.9/topics/db/models/#abstract-base-classes)
-defined in `django_pages.models`.
+defined in `django_amber.models`.
 
 What follows is a description of these classes, including the fields they
 provide to their subclasses, and details of instances of these classes are
 serialized.  It is probably clearer to read the example later on.
 
 
-#### `django_pages.models.ModelWithContent`
+#### `django_amber.models.ModelWithContent`
 
 Subclasses of `ModelWithContent` are for models whose instances represent
 objects with a significant amount of content, for instance a whole web page, a
@@ -137,7 +136,7 @@ all fields, except for the three mentioned above, are serialized as YAML.
 follow three dashes (`---`), and then follows the value of the `content` field.
 
 
-#### `django_pages.models.ModelWithoutContent`
+#### `django_amber.models.ModelWithoutContent`
 
 Subclasses of `ModelWithoutContent` are for models whose instances represent
 objects that do not have a significant amount of content.
@@ -228,3 +227,9 @@ then run the `dumppages` command to write the data to the filesystem.)
 ## Development
 
 Run tests with `tox`.
+
+
+## About the name
+
+[Thales of Miletus](https://en.wikipedia.org/wiki/Thales) used amber to
+generate static electricity.
