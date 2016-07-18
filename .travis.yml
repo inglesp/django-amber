@@ -5,4 +5,4 @@ services:
 install: pip install -r requirements-test.txt
 before_script:
   - psql -c 'create database "django-amber-test";' -U postgres
-script: python manage.py test -v3
+script: tox -e py35
