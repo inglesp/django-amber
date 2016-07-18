@@ -26,16 +26,19 @@ def run_runserver_in_process(port=default_port):
 
 
 def wait_for_server(port=default_port):
-    for i in range(5):
+    get_with_retries('http://localhost:{}/'.format(port))
+
+
+def get_with_retries(url, num_retries=5):
+    for i in range(num_retries):
         try:
-            requests.get('http://localhost:{}/'.format(port))
-            return
+            return requests.get(url)
         except requests.exceptions.ConnectionError:
             pass
 
         sleep(0.1 * 2 ** i)
 
-    raise RuntimeError('Got no response from runserver')
+    requests.get(url)
 
 
 def get_free_port():

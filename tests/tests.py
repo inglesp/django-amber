@@ -17,7 +17,7 @@ from django.test import TestCase, TransactionTestCase, override_settings
 from django_amber.management.commands import serve
 from django_amber.models import load_from_file
 from django_amber.serializer import Deserializer, Serializer
-from django_amber.utils import get_free_port, wait_for_server
+from django_amber.utils import get_free_port, get_with_retries, wait_for_server
 
 from .models import Article, Author, Tag
 
@@ -465,7 +465,7 @@ class TestServeDynamic2(TransactionTestCase):
         set_up_dumped_data(valid_only=True)
         management.call_command('loadpages')
 
-        rsp = requests.get('http://localhost:{}/articles/django/'.format(port))
+        rsp = get_with_retries('http://localhost:{}/articles/django/'.format(port))
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <em>Django</em>.', rsp.text)
 
@@ -479,7 +479,7 @@ class TestServeDynamic2(TransactionTestCase):
 
         sleep(0.5)
 
-        rsp = requests.get('http://localhost:{}/articles/django/'.format(port))
+        rsp = get_with_retries('http://localhost:{}/articles/django/'.format(port))
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <strong>Django</strong>.', rsp.text)
 
@@ -487,5 +487,5 @@ class TestServeDynamic2(TransactionTestCase):
 
         sleep(0.5)
 
-        rsp = requests.get('http://localhost:{}/articles/django/'.format(port))
+        rsp = get_with_retries('http://localhost:{}/articles/django/'.format(port))
         self.assertEqual(rsp.status_code, 404)
