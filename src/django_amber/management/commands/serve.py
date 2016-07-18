@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.core.management.commands.runserver import Command as RunserverCommand
 
 from django_amber.models import load_from_file
-from django_amber.utils import run_runserver_in_thread
+from django_amber.utils import run_runserver_in_process
 
 
 def load_changed(changed_paths):
@@ -78,8 +78,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         port = kwargs.get('port')
-        run_runserver_in_thread(port)
 
+        p = run_runserver_in_process(port)
+
+        try:
+            self.serve()
+        finally:
+            p.terminate()
+
+        print()
+
+    def serve(self):
         mtimes = get_mtimes()
 
         while True:
@@ -93,5 +102,3 @@ class Command(BaseCommand):
             load_changed(changed_paths)
             remove_missing(missing_paths)
             mtimes = new_mtimes
-
-        print()

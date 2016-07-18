@@ -7,20 +7,25 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from django_amber.utils import get_free_port, run_runserver_in_thread
+from django_amber.utils import get_free_port, run_runserver_in_process
 
 
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
-        verbosity = kwargs.get('verbosity')
-        call_command('loadpages', verbosity=verbosity)
+        port = get_free_port()
+
+        p = run_runserver_in_process(port)
+
+        try:
+            self.buildsite(port)
+        finally:
+            p.terminate()
+
+    def buildsite(self, port):
+        call_command('loadpages')
 
         output_path = os.path.join(settings.BASE_DIR, 'output')
         shutil.rmtree(output_path, ignore_errors=True)
-
-        port = get_free_port()
-
-        run_runserver_in_thread(port)
 
         for rsp in http_crawler.crawl('http://localhost:{}/'.format(port), follow_external_links=False):
             path = http_crawler.urlparse(rsp.url).path

@@ -1,9 +1,11 @@
 from filecmp import dircmp
 import glob
+from multiprocessing import Process
 import os
+import signal
 import shutil
-from threading import Thread
 from time import sleep
+import unittest
 
 import requests
 
@@ -343,14 +345,9 @@ class TestLoadPages(DjangoPagesTestCase):
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 
 
-# This needs to subclass TransactionTestCase because of some interaction
-# between threading, SQLite, and some code in TestCase, in a way that I don't
-# have time to care about right now... but I don't think it matters.
-#
-# If future-me cares, a django.db.utils.OperationalError is raised with message
-# "database table is locked: tests_article", but this gets swallowed up by
-# Django.  To see the error, drop into pdb in django.core.handlers.BaseHandler.
-# handle_uncaught_exception
+# This needs to subclass TransactionTestCase instead of TestCase, because
+# TestCase executes all database statements inside a transaction, meaning that
+# the objects that loadpages creates won't be visible to runserver.
 class TestBuildSite(TransactionTestCase):
     @classmethod
     def setUpClass(cls):
@@ -445,19 +442,28 @@ class TestServeDynamic(DjangoPagesTestCase):
 
 # This needs to subclass TransactionTestCase for same reason as TestBuildSite.
 class TestServeDynamic2(TransactionTestCase):
+    @unittest.removeHandler  # This allows us send SIGINT to the serve process
     def test_serve(self):
-        set_up_dumped_data(valid_only=True)
-        management.call_command('loadpages', verbosity=0)
-
         port = get_free_port()
 
-        Thread(
+        p = Process(
             target=management.call_command,
             args=('serve', port),
-            daemon=True,
-        ).start()
+        )
+
+        p.start()
 
         wait_for_server(port)
+
+        try:
+            self._test_serve(port)
+        finally:
+            os.kill(p.pid, signal.SIGINT)
+
+
+    def _test_serve(self, port):
+        set_up_dumped_data(valid_only=True)
+        management.call_command('loadpages')
 
         rsp = requests.get('http://localhost:{}/articles/django/'.format(port))
         self.assertTrue(rsp.ok)

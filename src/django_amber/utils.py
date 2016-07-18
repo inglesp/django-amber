@@ -1,4 +1,4 @@
-from threading import Thread
+from multiprocessing import Process
 from time import sleep
 from socket import socket
 
@@ -11,15 +11,18 @@ from django.core.management.commands.runserver import Command as RunserverComman
 default_port = RunserverCommand.default_port
 
 
-def run_runserver_in_thread(port=default_port):
-    Thread(
+def run_runserver_in_process(port=default_port):
+    p = Process(
         target=call_command,
         args=('runserver', port),
         kwargs={'use_reloader': False},
-        daemon=True,
-    ).start()
+    )
+
+    p.start()
 
     wait_for_server(port)
+
+    return p
 
 
 def wait_for_server(port=default_port):
