@@ -43,8 +43,13 @@ def get_mtimes():
     for app_config in apps.get_app_configs():
         path = os.path.join(app_config.path, 'data', '**', '*')
         for filename in glob.glob(path):
-            stat = os.stat(filename)
-            mtimes[filename] = stat.st_mtime
+            try:
+                stat = os.stat(filename)
+                mtimes[filename] = stat.st_mtime
+            except FileNotFoundError:
+                # Race condition: the file has disappeared in the time between
+                # the glob and the stat.
+                pass
 
     return mtimes
 
