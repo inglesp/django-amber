@@ -444,6 +444,8 @@ class TestServeDynamic(DjangoPagesTestCase):
 class TestServeDynamic2(TransactionTestCase):
     @unittest.removeHandler  # This allows us send SIGINT to the serve process
     def test_serve(self):
+        set_up_dumped_data(valid_only=True)
+
         port = get_free_port()
 
         p = Process(
@@ -462,9 +464,6 @@ class TestServeDynamic2(TransactionTestCase):
 
 
     def _test_serve(self, port):
-        set_up_dumped_data(valid_only=True)
-        management.call_command('loadpages')
-
         rsp = get_with_retries('http://localhost:{}/articles/django/'.format(port))
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <em>Django</em>.', rsp.text)

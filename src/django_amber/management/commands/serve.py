@@ -3,6 +3,7 @@ import os
 from time import sleep
 
 from django.apps import apps
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.core.management.commands.runserver import Command as RunserverCommand
 
@@ -83,6 +84,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         port = kwargs.get('port')
+
+        call_command('loadpages')
 
         p = run_runserver_in_process(port)
 
