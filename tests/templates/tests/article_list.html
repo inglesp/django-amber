@@ -6,7 +6,7 @@
 <ul>
     {% for article in article_list %}
     <li>
-        <a href="{% url 'article_detail' article.key %}">{{ article.title }}</a>
+        <a href="{% url 'article_detail' article.language article.slug %}">{{ article.title }}</a>
         by
         <a href="{% url 'author_detail' article.author.key %}">{{ article.author.name }}</a>
     </li>

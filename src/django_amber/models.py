@@ -19,6 +19,8 @@ class DjangoPagesModel(models.Model):
 
     dump_path_template =  '[app_label]/data/[model_name]/[key].[content_format]'
 
+    key_field_names = ['key']
+
     @classmethod
     def subclasses(cls):
         for app_config in apps.get_app_configs():
@@ -68,6 +70,12 @@ class DjangoPagesModel(models.Model):
 
     def __str__(self):
         return self.key
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            key_field_values = [getattr(self, field_name).replace('/', '//') for field_name in self.key_field_names]
+            self.key = '/'.join(key_field_values)
+        super().save(*args, **kwargs)
 
 
 class ModelWithoutContent(DjangoPagesModel):

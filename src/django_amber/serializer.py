@@ -39,6 +39,7 @@ class Serializer(PythonSerializer):
             if field_name not in ['app_label', 'model_name']:
                 fields.pop(field_name, None)
 
+        fields.pop('key', None)
         content = fields.pop('content', None)
 
         for field_name, field_value in fields.items():
@@ -145,6 +146,10 @@ def Deserializer(file, **options):
         fields['content'] = parts[1]
     elif 'content_format' in fields:
         del fields['content_format']
+
+    if 'key' not in fields:
+        key_field_values = [fields[field_name].replace('/', '//') for field_name in model.key_field_names]
+        fields['key'] = '/'.join(key_field_values)
 
     record = {
         'model': '{}.{}'.format(app_label, model_name),

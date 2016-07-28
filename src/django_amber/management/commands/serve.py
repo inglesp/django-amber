@@ -28,12 +28,14 @@ def remove_missing(missing_paths):
         model_name = fields['model_name']
         model = apps.get_model(app_label, model_name)
 
-        instance = model.objects.get_by_natural_key(fields['key'])
+        key_field_values = [fields[field_name].replace('/', '//') for field_name in model.key_field_names]
+        key = '/'.join(key_field_values)
+
+        instance = model.objects.get_by_natural_key(key)
         instance.delete()
 
-    # TODO  This assumes that the key will be available from the fields that
-    # are stored in the model's path.  This assumption is not enforced
-    # anywhere.
+    # TODO  This requires that the key be computable from the fields that are
+    # stored in the model's path.  This assumption is not enforced anywhere.
 
     # TODO  Decide what to do if deleting the object causes cascading
     # deletes.  Options:

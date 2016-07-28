@@ -25,6 +25,8 @@ from .models import Article, Author, Tag
 def get_path(model_name, filename):
     if model_name == 'tag':
         return os.path.join(settings.BASE_DIR, 'tests', 'tag-data', filename)
+    elif model_name == 'article':
+        return os.path.join(settings.BASE_DIR, 'tests', 'data', 'article', 'en', filename)
     else:
         return os.path.join(settings.BASE_DIR, 'tests', 'data', model_name, filename)
 
@@ -32,6 +34,8 @@ def get_path(model_name, filename):
 def get_test_file_path(model_name, filename):
     if model_name == 'tag':
         return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'tag-data', filename)
+    elif model_name == 'article':
+        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', 'article', 'en', filename)
     else:
         return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', model_name, filename)
 
@@ -53,6 +57,9 @@ def set_up_dumped_data(valid_only=False):
         for path in glob.glob(os.path.join('tests', 'data', '*', 'invalid_*')):
             os.remove(path)
 
+        for path in glob.glob(os.path.join('tests', 'data', '*', '*', 'invalid_*')):
+            os.remove(path)
+
         for path in glob.glob(os.path.join('tests', 'tag-data', 'invalid_*')):
             os.remove(path)
 
@@ -67,8 +74,8 @@ valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
     'tests/data/author/john.yml',
     'tests/tag-data/django.yml',
     'tests/tag-data/python.yml',
-    'tests/data/article/django.md',
-    'tests/data/article/python.md',
+    'tests/data/article/en/django.md',
+    'tests/data/article/en/python.md',
 ]]
 
 
@@ -92,7 +99,8 @@ class DjangoPagesTestCase(TestCase):
         cls.author2.tags.add(cls.tag1, cls.tag2)
 
         cls.article1 = Article.objects.create(
-            key='django',
+            slug='django',
+            language='en',
             title='All about Django',
             content='This is an article about *Django*.\n',
             content_format='md',
@@ -101,7 +109,8 @@ class DjangoPagesTestCase(TestCase):
         cls.article1.tags.add(cls.tag1)
 
         cls.article2 = Article.objects.create(
-            key='python',
+            slug='python',
+            language='en',
             title='All about Python',
             content='This is an article about *Python*.\n',
             content_format='md',
@@ -131,10 +140,10 @@ class TestModel(DjangoPagesTestCase):
         self.assertEqual(Author.objects.get_by_natural_key('john'), self.author2)
 
     def test_natural_key_with_content(self):
-        self.assertEqual(self.article1.natural_key(), ('django',))
+        self.assertEqual(self.article1.natural_key(), ('en/django',))
 
     def test_get_by_natural_key_with_content(self):
-        self.assertEqual(Article.objects.get_by_natural_key('python'), self.article2)
+        self.assertEqual(Article.objects.get_by_natural_key('en/python'), self.article2)
 
 
 class TestDeserialization(DjangoPagesTestCase):
@@ -171,7 +180,9 @@ class TestDeserialization(DjangoPagesTestCase):
         deserialized_obj.save()
         obj = deserialized_obj.object
 
-        self.assertEqual(obj.key, 'django')
+        self.assertEqual(obj.key, 'en/django')
+        self.assertEqual(obj.slug, 'django')
+        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
@@ -249,9 +260,11 @@ class TestLoadFromFile(DjangoPagesTestCase):
 
         path = get_path('article', 'django.md')
         load_from_file([path])
-        obj = Article.objects.get(key='django')
+        obj = Article.objects.get(key='en/django')
 
-        self.assertEqual(obj.key, 'django')
+        self.assertEqual(obj.key, 'en/django')
+        self.assertEqual(obj.slug, 'django')
+        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
@@ -351,8 +364,10 @@ class TestLoadPages(DjangoPagesTestCase):
         self.assertEqual(obj.editor.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django', 'python'])
 
-        obj = Article.objects.get(key='django')
-        self.assertEqual(obj.key, 'django')
+        obj = Article.objects.get(key='en/django')
+        self.assertEqual(obj.key, 'en/django')
+        self.assertEqual(obj.slug, 'django')
+        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
@@ -450,15 +465,10 @@ class TestServeDynamic(DjangoPagesTestCase):
     def test_remove_missing(self):
         self.create_model_instances()
 
-        author_id = self.author1.pk
-        serve.remove_missing([valid_data_paths[0]])
+        article_id = self.article1.pk
+        serve.remove_missing([valid_data_paths[4]])
         with self.assertRaises(ObjectDoesNotExist):
-            Author.objects.get(pk=author_id)
-
-        tag_id = self.tag1.pk
-        serve.remove_missing([valid_data_paths[2]])
-        with self.assertRaises(ObjectDoesNotExist):
-            Author.objects.get(pk=tag_id)
+            Article.objects.get(pk=article_id)
 
 
 # This needs to subclass TransactionTestCase for same reason as TestBuildSite.
@@ -485,7 +495,7 @@ class TestServeDynamic2(TransactionTestCase):
 
 
     def _test_serve(self, port):
-        rsp = get_with_retries('http://localhost:{}/articles/django/'.format(port))
+        rsp = get_with_retries('http://localhost:{}/articles/en/django/'.format(port))
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <em>Django</em>.', rsp.text)
 
@@ -499,7 +509,7 @@ class TestServeDynamic2(TransactionTestCase):
 
         sleep(0.5)
 
-        rsp = get_with_retries('http://localhost:{}/articles/django/'.format(port))
+        rsp = get_with_retries('http://localhost:{}/articles/en/django/'.format(port))
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <strong>Django</strong>.', rsp.text)
 
@@ -507,5 +517,5 @@ class TestServeDynamic2(TransactionTestCase):
 
         sleep(0.5)
 
-        rsp = get_with_retries('http://localhost:{}/articles/django/'.format(port))
+        rsp = get_with_retries('http://localhost:{}/articles/en/django/'.format(port))
         self.assertEqual(rsp.status_code, 404)
