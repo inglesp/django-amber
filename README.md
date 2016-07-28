@@ -11,7 +11,9 @@ Alpha-ish.  Django Amber is not yet used in production anywhere.
 
 ## Installation
 
-Django Amber is not yet `pip install`-able, but it will be!
+Install Django Amber with `pip`:
+
+    pip install django-amber
 
 
 ## Usage
@@ -74,12 +76,6 @@ While the server is running, this command watches for any changes to the
 serialized files on the filesystem, and updates the application's database
 accordingly.
 
-Once the server is terminated (via Control+C), it runs the `dumppages` command
-to dump the contents of the application's database to the filesystem.
-
-This allows you to change the contents of the serialized files by interacting
-with the running application, perhaps via the admin.
-
 
 #### `loadpages`
 
@@ -131,13 +127,16 @@ Subclasses inherit the following fields:
 
 Subclasses can define any other fields as required.
 
-Instances of subclasses of `ModelWithContent` will be serialized to the
-filesystem at `[app_label]]/data/[model_name]/[key].[content_format]`
+By default, instances of subclasses of `ModelWithContent` will be serialized to
+the filesystem at `[app_label]]/data/[model_name]/[key].[content_format]`.
+This can be overridden by setting the `dump_path_template` class variable.  See
+the `Article` model in `tests.models.py` for an example of this.
 
 The file containing a serialized model instance will have two parts.  Firstly,
-all fields, except for the three mentioned above, are serialized as YAML.
-`ForeignKey`s and `ManyToManyField`s are handled as described below.  Then
-follow three dashes (`---`), and then follows the value of the `content` field.
+all fields, except for those referred to in the `dump_path_template`, are
+serialized as YAML.  `ForeignKey`s and `ManyToManyField`s are handled as
+described below.  Then follow three dashes (`---`), and then follows the value
+of the `content` field.
 
 
 #### `django_amber.models.ModelWithoutContent`
@@ -154,12 +153,14 @@ Subclasses inherit the following field:
 
 Subclasses can define any other fields as required.
 
-Instances of subclasses of `ModelWithoutContent` will be serialized to the
-filesystem at `[app_label]]/data/[model_name]/[key].yml`
+By default, instances of subclasses of `ModelWithContent` will be serialized to
+the filesystem at `[app_label]]/data/[model_name]/[key].yml`.  This can be
+overridden by setting the `dump_path_template` class variable.  See the
+`Article` model in `tests.models.py` for an example of this.
 
 The file containing a serialized model instance contains all fields, except for
-`key`, serialized as YAML.  `ForeignKey`s and `ManyToManyField`s are handled as
-described below.
+except for those referred to in the `dump_path_template`, are serialized as
+YAML.  `ForeignKey`s and `ManyToManyField`s are handled as described below.
 
 
 #### Relationships between models
