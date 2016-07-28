@@ -11,6 +11,7 @@ from django_amber.serialization_helpers import load_from_file
 from django_amber.utils import run_runserver_in_process
 
 from ...models import DjangoPagesModel
+from ...serializer import get_fields_from_path
 
 
 def load_changed(changed_paths):
@@ -21,17 +22,18 @@ def load_changed(changed_paths):
 
 def remove_missing(missing_paths):
     for path in missing_paths:
-        dir_path, filename = os.path.split(path)
-        path_segments = dir_path.split(os.path.sep)
+        fields = get_fields_from_path(path)
 
-        app_label = path_segments[-3]
-        model_name = path_segments[-1]
+        app_label = fields['app_label']
+        model_name = fields['model_name']
         model = apps.get_model(app_label, model_name)
 
-        key, _ = os.path.splitext(filename)
-
-        instance = model.objects.get_by_natural_key(key)
+        instance = model.objects.get_by_natural_key(fields['key'])
         instance.delete()
+
+    # TODO  This assumes that the key will be available from the fields that
+    # are stored in the model's path.  This assumption is not enforced
+    # anywhere.
 
     # TODO  Decide what to do if deleting the object causes cascading
     # deletes.  Options:

@@ -75,21 +75,21 @@ valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
 class DjangoPagesTestCase(TestCase):
     @classmethod
     def create_model_instances(cls):
-        tag1 = Tag.objects.create(key='django', name='Django')
-        tag2 = Tag.objects.create(key='python', name='Python')
+        cls.tag1 = Tag.objects.create(key='django', name='Django')
+        cls.tag2 = Tag.objects.create(key='python', name='Python')
 
         cls.author1 = Author.objects.create(
             key='jane',
             name='Jane Smith'
         )
-        cls.author1.tags.add(tag1, tag2)
+        cls.author1.tags.add(cls.tag1, cls.tag2)
 
         cls.author2 = Author.objects.create(
             key='john',
             name='John Jones',
             editor=cls.author1
         )
-        cls.author2.tags.add(tag1, tag2)
+        cls.author2.tags.add(cls.tag1, cls.tag2)
 
         cls.article1 = Article.objects.create(
             key='django',
@@ -98,7 +98,7 @@ class DjangoPagesTestCase(TestCase):
             content_format='md',
             author=cls.author1,
         )
-        cls.article1.tags.add(tag1)
+        cls.article1.tags.add(cls.tag1)
 
         cls.article2 = Article.objects.create(
             key='python',
@@ -107,7 +107,7 @@ class DjangoPagesTestCase(TestCase):
             content_format='md',
             author=cls.author2,
         )
-        cls.article2.tags.add(tag2)
+        cls.article2.tags.add(cls.tag2)
 
     def check_dumped_output_correct(self, model_type, filename):
         with open(get_path(model_type, filename)) as f:
@@ -449,10 +449,16 @@ class TestServeDynamic(DjangoPagesTestCase):
 
     def test_remove_missing(self):
         self.create_model_instances()
-        article_id = self.article2.pk
-        serve.remove_missing([valid_data_paths[-1]])
+
+        author_id = self.author1.pk
+        serve.remove_missing([valid_data_paths[0]])
         with self.assertRaises(ObjectDoesNotExist):
-            Article.objects.get(pk=article_id)
+            Author.objects.get(pk=author_id)
+
+        tag_id = self.tag1.pk
+        serve.remove_missing([valid_data_paths[2]])
+        with self.assertRaises(ObjectDoesNotExist):
+            Author.objects.get(pk=tag_id)
 
 
 # This needs to subclass TransactionTestCase for same reason as TestBuildSite.
