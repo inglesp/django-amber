@@ -1,4 +1,5 @@
-import shutil
+import glob
+import os
 
 from django.apps import apps
 from django.core.management.base import BaseCommand
@@ -11,6 +12,8 @@ class Command(BaseCommand):
         for app_config in apps.get_app_configs():
             for model in app_config.get_models():
                 if issubclass(model, DjangoPagesModel):
-                    shutil.rmtree(model.dump_dir_path(), ignore_errors=True)
+                    for path in glob.glob(model.dump_path_glob_path()):
+                        os.remove(path)
+
                     for obj in model.objects.all():
                         obj.dump_to_file()

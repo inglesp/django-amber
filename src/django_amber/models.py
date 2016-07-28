@@ -1,6 +1,7 @@
 import os
+import re
 
-from django.apps import apps
+from django.conf import settings
 from django.db import models, transaction
 
 from .serializer import Deserializer, Serializer
@@ -17,22 +18,56 @@ class DjangoPagesModel(models.Model):
     class Meta:
         abstract = True
 
+    dump_path_template =  '[app_label]/data/[model_name]/[key].[content_format]'
+
     @classmethod
-    def dump_dir_path(cls):
-        app_config = apps.get_app_config(cls._meta.app_label)
-        return os.path.join(app_config.path, 'data', cls._meta.model_name)
+    def dump_path_glob_path(cls):
+        dump_path = cls.dump_path_template
+
+        for bracketed_field_name in re.findall('\[[\w_]+\]', cls.dump_path_template):
+            field_name = bracketed_field_name[1:-1]
+            if field_name == 'app_label':
+                value = cls._meta.app_label
+            elif field_name == 'model_name':
+                value = cls._meta.model_name
+            else:
+                value = '*'
+
+            dump_path = dump_path.replace(bracketed_field_name, value)
+
+        dump_path = dump_path.replace('/', os.path.sep)
+
+        return os.path.join(settings.BASE_DIR, dump_path)
+
+    def dump_path(self):
+        dump_path = self.dump_path_template
+
+        for bracketed_field_name in re.findall('\[[\w_]+\]', self.dump_path_template):
+            field_name = bracketed_field_name[1:-1]
+            if field_name == 'app_label':
+                value = self._meta.app_label
+            elif field_name == 'model_name':
+                value = self._meta.model_name
+            else:
+                value = getattr(self, field_name)
+
+            dump_path = dump_path.replace(bracketed_field_name, value)
+
+        dump_path = dump_path.replace('/', os.path.sep)
+
+        return os.path.join(settings.BASE_DIR, dump_path)
 
     def dump_to_file(self):
-        filename = '{}{}'.format(self.key, self.content_format)
-        dir_path = self.dump_dir_path()
-        os.makedirs(dir_path, exist_ok=True)
-        path = os.path.join(dir_path, filename)
+        dump_path = self.dump_path()
+        os.makedirs(os.path.dirname(dump_path), exist_ok=True)
 
         serializer = Serializer()
         serializer.serialize([self], use_natural_foreign_keys=True)
         data = serializer.getvalue()
 
-        with open(path, 'w') as f:
+        print('dump_path:', dump_path)
+
+        with open(dump_path, 'w') as f:
             f.write(data)
 
     def natural_key(self):
@@ -45,7 +80,7 @@ class DjangoPagesModel(models.Model):
 class ModelWithoutContent(DjangoPagesModel):
     key = models.CharField(max_length=255)
 
-    content_format = '.yml'
+    content_format = 'yml'
 
     has_content = False
 

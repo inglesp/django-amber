@@ -23,11 +23,11 @@ from .models import Article, Author, Tag
 
 
 def get_path(model_name, filename):
-    return os.path.join('tests', 'data', model_name, filename)
+    return os.path.join(settings.BASE_DIR, 'tests', 'data', model_name, filename)
 
 
 def get_test_file_path(model_name, filename):
-    return os.path.join('tests', 'test-files', 'data', model_name, filename)
+    return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', model_name, filename)
 
 
 def set_up_dumped_data(valid_only=False):
@@ -80,7 +80,7 @@ class DjangoPagesTestCase(TestCase):
             key='django',
             title='All about Django',
             content='This is an article about *Django*.\n',
-            content_format='.md',
+            content_format='md',
             author=cls.author1,
         )
         cls.article1.tags.add(tag1)
@@ -89,7 +89,7 @@ class DjangoPagesTestCase(TestCase):
             key='python',
             title='All about Python',
             content='This is an article about *Python*.\n',
-            content_format='.md',
+            content_format='md',
             author=cls.author2,
         )
         cls.article2.tags.add(tag2)
@@ -157,7 +157,7 @@ class TestDeserialization(DjangoPagesTestCase):
         obj = deserialized_obj.object
 
         self.assertEqual(obj.key, 'django')
-        self.assertEqual(obj.content_format, '.md')
+        self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
         self.assertEqual(obj.author.key, 'jane')
@@ -237,7 +237,7 @@ class TestLoadFromFile(DjangoPagesTestCase):
         obj = Article.objects.get(key='django')
 
         self.assertEqual(obj.key, 'django')
-        self.assertEqual(obj.content_format, '.md')
+        self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
         self.assertEqual(obj.author.key, 'jane')
@@ -338,7 +338,7 @@ class TestLoadPages(DjangoPagesTestCase):
 
         obj = Article.objects.get(key='django')
         self.assertEqual(obj.key, 'django')
-        self.assertEqual(obj.content_format, '.md')
+        self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
         self.assertEqual(obj.author.key, 'jane')
