@@ -1,5 +1,6 @@
 from collections import defaultdict
 import os.path
+import re
 
 import yaml
 
@@ -32,8 +33,12 @@ class Serializer(PythonSerializer):
         model = apps.get_model(app_label, model_name)
 
         fields = {name: value for name, value in obj['fields'].items() if value}
-        fields.pop('key')
-        fields.pop('content_format', None)
+
+        for bracketed_field_name in re.findall('\[[\w_]+\]', model.dump_path_template):
+            field_name = bracketed_field_name[1:-1]
+            if field_name not in ['app_label', 'model_name']:
+                fields.pop(field_name, None)
+
         content = fields.pop('content', None)
 
         for field_name, field_value in fields.items():
