@@ -13,8 +13,6 @@ def dump_to_file(instance):
     serializer.serialize([instance], use_natural_foreign_keys=True)
     data = serializer.getvalue()
 
-    print('dump_path:', dump_path)
-
     with open(dump_path, 'w') as f:
         f.write(data)
 
