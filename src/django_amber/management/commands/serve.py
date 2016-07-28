@@ -10,6 +10,8 @@ from django.core.management.commands.runserver import Command as RunserverComman
 from django_amber.serialization_helpers import load_from_file
 from django_amber.utils import run_runserver_in_process
 
+from ...models import DjangoPagesModel
+
 
 def load_changed(changed_paths):
     load_from_file(changed_paths)
@@ -41,8 +43,8 @@ def remove_missing(missing_paths):
 def get_mtimes():
     mtimes = {}
 
-    for app_config in apps.get_app_configs():
-        path = os.path.join(app_config.path, 'data', '**', '*')
+    for model in DjangoPagesModel.subclasses():
+        path = model.dump_path_glob_path()
         for filename in glob.glob(path):
             try:
                 stat = os.stat(filename)

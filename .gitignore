@@ -4,6 +4,7 @@
 db.sqlite3
 output/
 tests/data/
+tests/tag-data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -23,11 +23,17 @@ from .models import Article, Author, Tag
 
 
 def get_path(model_name, filename):
-    return os.path.join(settings.BASE_DIR, 'tests', 'data', model_name, filename)
+    if model_name == 'tag':
+        return os.path.join(settings.BASE_DIR, 'tests', 'tag-data', filename)
+    else:
+        return os.path.join(settings.BASE_DIR, 'tests', 'data', model_name, filename)
 
 
 def get_test_file_path(model_name, filename):
-    return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', model_name, filename)
+    if model_name == 'tag':
+        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'tag-data', filename)
+    else:
+        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', model_name, filename)
 
 
 def set_up_dumped_data(valid_only=False):
@@ -38,20 +44,29 @@ def set_up_dumped_data(valid_only=False):
         os.path.join('tests', 'data')
     )
 
+    shutil.copytree(
+        os.path.join('tests', 'test-files', 'tag-data'),
+        os.path.join('tests', 'tag-data')
+    )
+
     if valid_only:
-        for path in glob.glob(os.path.join('tests', '*', '*', 'invalid_*')):
+        for path in glob.glob(os.path.join('tests', 'data', '*', 'invalid_*')):
+            os.remove(path)
+
+        for path in glob.glob(os.path.join('tests', 'tag-data', 'invalid_*')):
             os.remove(path)
 
 
 def clear_dumped_data():
     shutil.rmtree(os.path.join('tests', 'data'), ignore_errors=True)
+    shutil.rmtree(os.path.join('tests', 'tag-data'), ignore_errors=True)
 
 
 valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
     'tests/data/author/jane.yml',
     'tests/data/author/john.yml',
-    'tests/data/tag/django.yml',
-    'tests/data/tag/python.yml',
+    'tests/tag-data/django.yml',
+    'tests/tag-data/python.yml',
     'tests/data/article/django.md',
     'tests/data/article/python.md',
 ]]

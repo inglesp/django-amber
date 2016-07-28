@@ -1,3 +1,4 @@
+from collections import defaultdict
 import os.path
 
 import yaml
@@ -60,22 +61,46 @@ def get_segments_from_path(path):
 
 
 def get_fields_from_path(path):
-    path_templ = DjangoPagesModel.dump_path_template
-    path_templ_segments = get_segments_from_path(path_templ)
-
     path_segments = get_segments_from_path(os.path.relpath(path, settings.BASE_DIR))
 
-    assert len(path_segments) == len(path_templ_segments)
+    path_templs = defaultdict(list)
 
-    fields = {}
+    for model in DjangoPagesModel.subclasses():
+        path_templs[model.dump_path_template].append(model)
 
-    for path_seg, path_templ_seg in zip(path_segments, path_templ_segments):
-        if path_templ_seg[0] == '[' and path_templ_seg[-1] == ']':
-            fields[path_templ_seg[1:-1]] = path_seg
-        else:
-            assert path_templ_seg == path_seg
+    for path_templ in path_templs:
+        path_templ_segments = get_segments_from_path(path_templ)
 
-    return fields
+        if len(path_segments) != len(path_templ_segments):
+            continue
+
+        fields = {}
+
+        no_match = False
+
+        for path_seg, path_templ_seg in zip(path_segments, path_templ_segments):
+            if path_templ_seg[0] == '[' and path_templ_seg[-1] == ']':
+                fields[path_templ_seg[1:-1]] = path_seg
+            else:
+                if path_templ_seg != path_seg:
+                    no_match = True
+                    break
+
+        if no_match:
+            continue
+
+        if len(path_templs[path_templ]) == 1:
+            model = path_templs[path_templ][0]
+
+            if 'model_name' not in fields:
+                fields['model_name'] = model._meta.model_name
+
+            if 'app_label' not in fields:
+                fields['app_label'] = model._meta.app_label
+
+        return fields
+
+    raise RuntimeError('Could not find model for loading data at {}'.format(path))
 
 
 # Built-in deserializers take either a stream or string, but we require a file,
@@ -113,7 +138,7 @@ def Deserializer(file, **options):
             raise DeserializationError('Missing content')
 
         fields['content'] = parts[1]
-    else:
+    elif 'content_format' in fields:
         del fields['content_format']
 
     record = {
