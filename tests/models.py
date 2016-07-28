@@ -22,5 +22,3 @@ class Author(ModelWithoutContent):
 
 class Tag(ModelWithoutContent):
     name = models.CharField(max_length=255)
-
-    dump_path_template =  'tests/tag-data/[key].yml'
