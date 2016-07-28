@@ -1,0 +1,35 @@
+import os
+
+from django.db import transaction
+
+from .serializer import Deserializer, Serializer
+
+
+def dump_to_file(instance):
+    dump_path = instance.dump_path()
+    os.makedirs(os.path.dirname(dump_path), exist_ok=True)
+
+    serializer = Serializer()
+    serializer.serialize([instance], use_natural_foreign_keys=True)
+    data = serializer.getvalue()
+
+    print('dump_path:', dump_path)
+
+    with open(dump_path, 'w') as f:
+        f.write(data)
+
+
+def load_from_file(paths):
+    objs_with_deferred_fields = []
+
+    with transaction.atomic():
+        for path in paths:
+            with open(path, 'rb') as f:
+                for obj in Deserializer(f, handle_forward_references=True):
+                    obj.save()
+
+                    if obj.deferred_fields:
+                        objs_with_deferred_fields.append(obj)
+
+        for obj in objs_with_deferred_fields:
+            obj.save_deferred_fields()

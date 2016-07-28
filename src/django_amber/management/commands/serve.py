@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.core.management.commands.runserver import Command as RunserverCommand
 
-from django_amber.models import load_from_file
+from django_amber.serialization_helpers import load_from_file
 from django_amber.utils import run_runserver_in_process
 
 

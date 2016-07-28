@@ -15,7 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, TransactionTestCase, override_settings
 
 from django_amber.management.commands import serve
-from django_amber.models import load_from_file
+from django_amber.serialization_helpers import dump_to_file, load_from_file
 from django_amber.serializer import Deserializer, Serializer
 from django_amber.utils import get_free_port, get_with_retries, wait_for_server
 
@@ -278,11 +278,11 @@ class TestDumpToFile(DjangoPagesTestCase):
 
     def test_dump_to_file_without_content(self):
         # We use author2 here since it has a foreign key another author
-        self.author2.dump_to_file()
+        dump_to_file(self.author2)
         self.check_dumped_output_correct('author', 'john.yml')
 
     def test_dump_to_file_with_content(self):
-        self.article1.dump_to_file()
+        dump_to_file(self.article1)
         self.check_dumped_output_correct('article', 'django.md')
 
 

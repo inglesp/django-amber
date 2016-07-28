@@ -16,6 +16,7 @@ from django.core.serializers.base import DeserializationError
 from django.core.serializers.python import Serializer as PythonSerializer
 from django.core.serializers.pyyaml import DjangoSafeDumper
 
+from .models import DjangoPagesModel
 from .python_serializer import Deserializer as PythonDeserializer
 
 
@@ -59,7 +60,6 @@ def get_segments_from_path(path):
 
 
 def get_fields_from_path(path):
-    from .models import DjangoPagesModel  # Side-step circular imports
     path_templ = DjangoPagesModel.dump_path_template
     path_templ_segments = get_segments_from_path(path_templ)
 

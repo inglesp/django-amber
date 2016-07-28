@@ -4,8 +4,8 @@ import os
 from django.apps import apps
 from django.core.management.base import BaseCommand
 
-from ...models import DjangoPagesModel, load_from_file
-
+from ...models import DjangoPagesModel
+from ...serialization_helpers import load_from_file
 
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):

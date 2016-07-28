@@ -5,6 +5,7 @@ from django.apps import apps
 from django.core.management.base import BaseCommand
 
 from ...models import DjangoPagesModel
+from ...serialization_helpers import dump_to_file
 
 
 class Command(BaseCommand):
@@ -16,4 +17,4 @@ class Command(BaseCommand):
                         os.remove(path)
 
                     for obj in model.objects.all():
-                        obj.dump_to_file()
+                        dump_to_file(obj)
