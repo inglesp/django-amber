@@ -1,6 +1,7 @@
 import os
 import re
 
+from django.apps import apps
 from django.conf import settings
 from django.db import models
 
@@ -17,6 +18,13 @@ class DjangoPagesModel(models.Model):
         abstract = True
 
     dump_path_template =  '[app_label]/data/[model_name]/[key].[content_format]'
+
+    @classmethod
+    def subclasses(cls):
+        for app_config in apps.get_app_configs():
+            for model in app_config.get_models():
+                if issubclass(model, DjangoPagesModel):
+                    yield model
 
     @classmethod
     def dump_path_glob_path(cls):
