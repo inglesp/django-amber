@@ -1,7 +1,3 @@
-from collections import defaultdict
-import os.path
-import re
-
 import yaml
 
 try:
@@ -12,13 +8,12 @@ except ImportError:
 
 from django.apps import apps
 from django.db import models
-from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.core.serializers.base import DeserializationError
 from django.core.serializers.python import Serializer as PythonSerializer
 from django.core.serializers.pyyaml import DjangoSafeDumper
 
-from .models import DjangoPagesModel, parse_dump_path
+from .models import parse_dump_path
 from .python_serializer import Deserializer as PythonDeserializer
 
 

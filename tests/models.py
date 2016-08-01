@@ -7,7 +7,7 @@ class Article(ModelWithContent):
     author = models.ForeignKey('Author', null=True)
     tags = models.ManyToManyField('Tag', related_name='articles')
 
-    dump_dir_path =  'tests/data/articles'
+    dump_dir_path = 'tests/data/articles'
 
 
 class Author(ModelWithoutContent):

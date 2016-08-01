@@ -7,8 +7,6 @@ import shutil
 from time import sleep
 import unittest
 
-import requests
-
 from django.conf import settings
 from django.core import management, serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -478,7 +476,6 @@ class TestServeDynamic2(TransactionTestCase):
             self._test_serve(port)
         finally:
             os.kill(p.pid, signal.SIGINT)
-
 
     def _test_serve(self, port):
         rsp = get_with_retries('http://localhost:{}/articles/en/django/'.format(port))
