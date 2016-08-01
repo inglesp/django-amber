@@ -129,14 +129,13 @@ Subclasses can define any other fields as required.
 
 By default, instances of subclasses of `ModelWithContent` will be serialized to
 the filesystem at `[app_label]]/data/[model_name]/[key].[content_format]`.
-This can be overridden by setting the `dump_path_template` class variable.  See
-the `Article` model in `tests.models.py` for an example of this.
+This can be overridden by setting the `dump_path_dir` class variable.  See the
+`Article` model in `tests.models.py` for an example of this.
 
 The file containing a serialized model instance will have two parts.  Firstly,
-all fields, except for those referred to in the `dump_path_template`, are
-serialized as YAML.  `ForeignKey`s and `ManyToManyField`s are handled as
-described below.  Then follow three dashes (`---`), and then follows the value
-of the `content` field.
+all fields, except for the three mentioned above, are serialized as YAML.
+`ForeignKey`s and `ManyToManyField`s are handled as described below.  Then
+follow three dashes (`---`), and then follows the value of the `content` field.
 
 
 #### `django_amber.models.ModelWithoutContent`
@@ -155,12 +154,12 @@ Subclasses can define any other fields as required.
 
 By default, instances of subclasses of `ModelWithContent` will be serialized to
 the filesystem at `[app_label]]/data/[model_name]/[key].yml`.  This can be
-overridden by setting the `dump_path_template` class variable.  See the
+overridden by setting the `dump_path_dir` class variable.  See the
 `Article` model in `tests.models.py` for an example of this.
 
 The file containing a serialized model instance contains all fields, except for
-except for those referred to in the `dump_path_template`, are serialized as
-YAML.  `ForeignKey`s and `ManyToManyField`s are handled as described below.
+`key`, serialized as YAML.  `ForeignKey`s and `ManyToManyField`s are handled as
+described below.
 
 
 #### Relationships between models
