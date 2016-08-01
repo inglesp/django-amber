@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView, ListView, TemplateView
 
 from .models import Article, Author
@@ -14,13 +13,7 @@ class ArticleList(ListView):
 
 class ArticleDetail(DetailView):
     model = Article
-    
-    def get_object(self, queryset=None):
-        return get_object_or_404(
-            self.model,
-            language=self.kwargs['language'],
-            slug=self.kwargs['slug'],
-        )
+    slug_field = 'key'
 
 
 class AuthorList(ListView):

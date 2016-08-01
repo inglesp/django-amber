@@ -15,6 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, TransactionTestCase, override_settings
 
 from django_amber.management.commands import serve
+from django_amber.models import parse_dump_path
 from django_amber.serialization_helpers import dump_to_file, load_from_file
 from django_amber.serializer import Deserializer, Serializer
 from django_amber.utils import get_free_port, get_with_retries, wait_for_server
@@ -22,18 +23,20 @@ from django_amber.utils import get_free_port, get_with_retries, wait_for_server
 from .models import Article, Author, Tag
 
 
-def get_path(model_name, filename):
+def get_path(model_name, key):
     if model_name == 'article':
-        return os.path.join(settings.BASE_DIR, 'tests', 'data', 'article', 'en', filename)
+        language, slug = key.split('/')
+        return os.path.join(settings.BASE_DIR, 'tests', 'data', 'articles', language, slug + '.md')
     else:
-        return os.path.join(settings.BASE_DIR, 'tests', 'data', model_name, filename)
+        return os.path.join(settings.BASE_DIR, 'tests', 'data', model_name, key + '.yml')
 
 
-def get_test_file_path(model_name, filename):
+def get_test_file_path(model_name, key):
     if model_name == 'article':
-        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', 'article', 'en', filename)
+        language, slug = key.split('/')
+        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', 'articles', language, slug + '.md')
     else:
-        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', model_name, filename)
+        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', model_name, key + '.yml')
 
 
 def set_up_dumped_data(valid_only=False):
@@ -61,8 +64,8 @@ valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
     'tests/data/author/john.yml',
     'tests/data/tag/django.yml',
     'tests/data/tag/python.yml',
-    'tests/data/article/en/django.md',
-    'tests/data/article/en/python.md',
+    'tests/data/articles/en/django.md',
+    'tests/data/articles/en/python.md',
 ]]
 
 
@@ -86,8 +89,7 @@ class DjangoPagesTestCase(TestCase):
         cls.author2.tags.add(cls.tag1, cls.tag2)
 
         cls.article1 = Article.objects.create(
-            slug='django',
-            language='en',
+            key='en/django',
             title='All about Django',
             content='This is an article about *Django*.\n',
             content_format='md',
@@ -96,8 +98,7 @@ class DjangoPagesTestCase(TestCase):
         cls.article1.tags.add(cls.tag1)
 
         cls.article2 = Article.objects.create(
-            slug='python',
-            language='en',
+            key='en/python',
             title='All about Python',
             content='This is an article about *Python*.\n',
             content_format='md',
@@ -105,11 +106,11 @@ class DjangoPagesTestCase(TestCase):
         )
         cls.article2.tags.add(cls.tag2)
 
-    def check_dumped_output_correct(self, model_type, filename):
-        with open(get_path(model_type, filename)) as f:
+    def check_dumped_output_correct(self, model_type, key):
+        with open(get_path(model_type, key)) as f:
             actual = f.read()
 
-        with open(get_test_file_path(model_type, filename)) as f:
+        with open(get_test_file_path(model_type, key)) as f:
             expected = f.read()
 
         self.assertEqual(actual, expected)
@@ -132,6 +133,10 @@ class TestModel(DjangoPagesTestCase):
     def test_get_by_natural_key_with_content(self):
         self.assertEqual(Article.objects.get_by_natural_key('en/python'), self.article2)
 
+    def test_parse_dump_path(self):
+        path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'articles', 'en', 'django.md')
+        self.assertEqual(parse_dump_path(path), (Article, 'en/django', 'md'))
+
 
 class TestDeserialization(DjangoPagesTestCase):
     @classmethod
@@ -139,8 +144,8 @@ class TestDeserialization(DjangoPagesTestCase):
         super(TestDeserialization, cls).setUpClass()
         set_up_dumped_data()
 
-    def deserialize(self, model_name, filename):
-        path = get_path(model_name, filename)
+    def deserialize(self, model_name, key):
+        path = get_path(model_name, key)
         with open(path, 'rb') as f:
             return next(Deserializer(f))
 
@@ -149,7 +154,7 @@ class TestDeserialization(DjangoPagesTestCase):
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
 
-        deserialized_obj = self.deserialize('author', 'john.yml')
+        deserialized_obj = self.deserialize('author', 'john')
         deserialized_obj.save()
         obj = deserialized_obj.object
 
@@ -163,13 +168,11 @@ class TestDeserialization(DjangoPagesTestCase):
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
 
-        deserialized_obj = self.deserialize('article', 'django.md')
+        deserialized_obj = self.deserialize('article', 'en/django')
         deserialized_obj.save()
         obj = deserialized_obj.object
 
         self.assertEqual(obj.key, 'en/django')
-        self.assertEqual(obj.slug, 'django')
-        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
@@ -178,23 +181,23 @@ class TestDeserialization(DjangoPagesTestCase):
 
     def test_deserialization_with_invalid_yaml_without_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
-            self.deserialize('author', 'invalid_yaml.yml')
+            self.deserialize('author', 'invalid_yaml')
 
     def test_deserialization_with_invalid_yaml_with_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
-            self.deserialize('article', 'invalid_yaml.md')
+            self.deserialize('article', 'en/invalid_yaml')
 
     def test_deserialization_with_invalid_object_without_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
-            self.deserialize('author', 'invalid_object.yml')
+            self.deserialize('author', 'invalid_object')
 
     def test_deserialization_with_invalid_object_with_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
-            self.deserialize('article', 'invalid_object.md')
+            self.deserialize('article', 'en/invalid_object')
 
     def test_deserialization_with_missing_content_with_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
-            self.deserialize('article', 'invalid_missing_content.md')
+            self.deserialize('article', 'en/invalid_missing_content')
 
 
 class TestSerialization(DjangoPagesTestCase):
@@ -209,13 +212,13 @@ class TestSerialization(DjangoPagesTestCase):
     def test_serialization_without_content(self):
         # We use author2 here since it has a foreign key another author
         actual = self.serialize(self.author2, 'yml')
-        with open(get_test_file_path('author', 'john.yml')) as f:
+        with open(get_test_file_path('author', 'john')) as f:
             expected = f.read()
         self.assertEqual(actual, expected)
 
     def test_serialization_with_content(self):
         actual = self.serialize(self.article1, 'md')
-        with open(get_test_file_path('article', 'django.md')) as f:
+        with open(get_test_file_path('article', 'en/django')) as f:
             expected = f.read()
         self.assertEqual(actual, expected)
 
@@ -231,7 +234,7 @@ class TestLoadFromFile(DjangoPagesTestCase):
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
 
-        path = get_path('author', 'john.yml')
+        path = get_path('author', 'john')
         load_from_file([path])
         obj = Author.objects.get(key='john')
 
@@ -245,13 +248,11 @@ class TestLoadFromFile(DjangoPagesTestCase):
         Tag.objects.create(key='django', name='Django')
         Tag.objects.create(key='python', name='Python')
 
-        path = get_path('article', 'django.md')
+        path = get_path('article', 'en/django')
         load_from_file([path])
         obj = Article.objects.get(key='en/django')
 
         self.assertEqual(obj.key, 'en/django')
-        self.assertEqual(obj.slug, 'django')
-        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
@@ -263,8 +264,8 @@ class TestLoadFromFile(DjangoPagesTestCase):
         Tag.objects.create(key='python', name='Python')
 
         paths = [
-            get_path('author', 'john.yml'),
-            get_path('author', 'jane.yml'),
+            get_path('author', 'john'),
+            get_path('author', 'jane'),
         ]
         load_from_file(paths)
 
@@ -273,9 +274,9 @@ class TestLoadFromFile(DjangoPagesTestCase):
 
     def test_m2m_forward_references(self):
         paths = [
-            get_path('author', 'jane.yml'),
-            get_path('tag', 'django.yml'),
-            get_path('tag', 'python.yml'),
+            get_path('author', 'jane'),
+            get_path('tag', 'django'),
+            get_path('tag', 'python'),
         ]
         load_from_file(paths)
 
@@ -294,11 +295,11 @@ class TestDumpToFile(DjangoPagesTestCase):
     def test_dump_to_file_without_content(self):
         # We use author2 here since it has a foreign key another author
         dump_to_file(self.author2)
-        self.check_dumped_output_correct('author', 'john.yml')
+        self.check_dumped_output_correct('author', 'john')
 
     def test_dump_to_file_with_content(self):
         dump_to_file(self.article1)
-        self.check_dumped_output_correct('article', 'django.md')
+        self.check_dumped_output_correct('article', 'en/django')
 
 
 class TestDumpPages(DjangoPagesTestCase):
@@ -311,15 +312,15 @@ class TestDumpPages(DjangoPagesTestCase):
 
     def test_dumppages(self):
         management.call_command('dumppages')
-        self.check_dumped_output_correct('author', 'jane.yml')
-        self.check_dumped_output_correct('author', 'john.yml')
-        self.check_dumped_output_correct('tag', 'django.yml')
-        self.check_dumped_output_correct('tag', 'python.yml')
-        self.check_dumped_output_correct('article', 'django.md')
-        self.check_dumped_output_correct('article', 'python.md')
+        self.check_dumped_output_correct('author', 'jane')
+        self.check_dumped_output_correct('author', 'john')
+        self.check_dumped_output_correct('tag', 'django')
+        self.check_dumped_output_correct('tag', 'python')
+        self.check_dumped_output_correct('article', 'en/django')
+        self.check_dumped_output_correct('article', 'en/python')
 
     def test_dumppages_removes_existing_files(self):
-        path = get_path('article', 'flask.md')
+        path = get_path('article', 'en/flask')
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w'):
             pass
@@ -353,8 +354,6 @@ class TestLoadPages(DjangoPagesTestCase):
 
         obj = Article.objects.get(key='en/django')
         self.assertEqual(obj.key, 'en/django')
-        self.assertEqual(obj.slug, 'django')
-        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
@@ -486,7 +485,7 @@ class TestServeDynamic2(TransactionTestCase):
         self.assertTrue(rsp.ok)
         self.assertIn('This is an article about <em>Django</em>.', rsp.text)
 
-        path = get_path('article', 'django.md')
+        path = get_path('article', 'en/django')
 
         with open(path) as f:
             contents = f.read()

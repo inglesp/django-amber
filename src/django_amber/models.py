@@ -17,9 +17,15 @@ class DjangoPagesModel(models.Model):
     class Meta:
         abstract = True
 
-    dump_path_template =  '[app_label]/data/[model_name]/[key].[content_format]'
+    dump_dir_path = None
 
-    key_field_names = ['key']
+    @classmethod
+    def get_dump_dir_path(cls):
+        if cls.dump_dir_path is None:
+            app_config = apps.get_app_config(cls._meta.app_label)
+            return os.path.join(app_config.path, 'data', cls._meta.model_name)
+        else:
+            return os.path.join(settings.BASE_DIR, *cls.dump_dir_path.split('/'))
 
     @classmethod
     def subclasses(cls):
@@ -28,54 +34,14 @@ class DjangoPagesModel(models.Model):
                 if issubclass(model, DjangoPagesModel):
                     yield model
 
-    @classmethod
-    def dump_path_glob_path(cls):
-        dump_path = cls.dump_path_template
-
-        for bracketed_field_name in re.findall('\[[\w_]+\]', cls.dump_path_template):
-            field_name = bracketed_field_name[1:-1]
-            if field_name == 'app_label':
-                value = cls._meta.app_label
-            elif field_name == 'model_name':
-                value = cls._meta.model_name
-            else:
-                value = '*'
-
-            dump_path = dump_path.replace(bracketed_field_name, value)
-
-        dump_path = dump_path.replace('/', os.path.sep)
-
-        return os.path.join(settings.BASE_DIR, dump_path)
-
     def dump_path(self):
-        dump_path = self.dump_path_template
-
-        for bracketed_field_name in re.findall('\[[\w_]+\]', self.dump_path_template):
-            field_name = bracketed_field_name[1:-1]
-            if field_name == 'app_label':
-                value = self._meta.app_label
-            elif field_name == 'model_name':
-                value = self._meta.model_name
-            else:
-                value = getattr(self, field_name)
-
-            dump_path = dump_path.replace(bracketed_field_name, value)
-
-        dump_path = dump_path.replace('/', os.path.sep)
-
-        return os.path.join(settings.BASE_DIR, dump_path)
+        return os.path.join(self.get_dump_dir_path(), *self.key.split('/')) + '.' + self.content_format
 
     def natural_key(self):
         return (self.key,)
 
     def __str__(self):
         return self.key
-
-    def save(self, *args, **kwargs):
-        if not self.key:
-            key_field_values = [getattr(self, field_name).replace('/', '//') for field_name in self.key_field_names]
-            self.key = '/'.join(key_field_values)
-        super().save(*args, **kwargs)
 
 
 class ModelWithoutContent(DjangoPagesModel):
@@ -98,3 +64,14 @@ class ModelWithContent(DjangoPagesModel):
 
     class Meta:
         abstract = True
+
+
+def parse_dump_path(path):
+    for model in DjangoPagesModel.subclasses():
+        if os.path.commonpath([path, model.get_dump_dir_path()]) == model.get_dump_dir_path():
+            remainder = os.path.relpath(path, model.get_dump_dir_path())
+            key, content_format_with_dot = os.path.splitext(remainder)
+            content_format = content_format_with_dot[1:]
+            return model, key, content_format
+
+    assert False

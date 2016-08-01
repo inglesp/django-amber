@@ -18,7 +18,7 @@ from django.core.serializers.base import DeserializationError
 from django.core.serializers.python import Serializer as PythonSerializer
 from django.core.serializers.pyyaml import DjangoSafeDumper
 
-from .models import DjangoPagesModel
+from .models import DjangoPagesModel, parse_dump_path
 from .python_serializer import Deserializer as PythonDeserializer
 
 
@@ -34,12 +34,8 @@ class Serializer(PythonSerializer):
 
         fields = {name: value for name, value in obj['fields'].items() if value}
 
-        for bracketed_field_name in re.findall('\[[\w_]+\]', model.dump_path_template):
-            field_name = bracketed_field_name[1:-1]
-            if field_name not in ['app_label', 'model_name']:
-                fields.pop(field_name, None)
-
         fields.pop('key', None)
+        fields.pop('content_format', None)
         content = fields.pop('content', None)
 
         for field_name, field_value in fields.items():
@@ -62,58 +58,11 @@ class Serializer(PythonSerializer):
         return super(PythonSerializer, self).getvalue()
 
 
-def get_segments_from_path(path):
-    return path.replace(os.path.sep, '.').split('.')
-
-
-def get_fields_from_path(path):
-    path_segments = get_segments_from_path(os.path.relpath(path, settings.BASE_DIR))
-
-    path_templs = defaultdict(list)
-
-    for model in DjangoPagesModel.subclasses():
-        path_templs[model.dump_path_template].append(model)
-
-    for path_templ in path_templs:
-        path_templ_segments = get_segments_from_path(path_templ)
-
-        if len(path_segments) != len(path_templ_segments):
-            continue
-
-        fields = {}
-
-        no_match = False
-
-        for path_seg, path_templ_seg in zip(path_segments, path_templ_segments):
-            if path_templ_seg[0] == '[' and path_templ_seg[-1] == ']':
-                fields[path_templ_seg[1:-1]] = path_seg
-            else:
-                if path_templ_seg != path_seg:
-                    no_match = True
-                    break
-
-        if no_match:
-            continue
-
-        if len(path_templs[path_templ]) == 1:
-            model = path_templs[path_templ][0]
-
-            if 'model_name' not in fields:
-                fields['model_name'] = model._meta.model_name
-
-            if 'app_label' not in fields:
-                fields['app_label'] = model._meta.app_label
-
-        return fields
-
-    raise RuntimeError('Could not find model for loading data at {}'.format(path))
-
-
 # Built-in deserializers take either a stream or string, but we require a file,
 # because we extract some of the data about the object deserialized in the file
 # from its path.
 def Deserializer(file, **options):
-    fields = get_fields_from_path(file.name)
+    model, key, content_format = parse_dump_path(file.name)
 
     data = file.read().decode('utf-8')
 
@@ -121,14 +70,12 @@ def Deserializer(file, **options):
 
     parts = data.split(separator, 1)
 
+    fields = {'key': key, 'content_format': content_format}
+
     try:
         fields.update(yaml.load(parts[0], Loader=SafeLoader))
     except yaml.YAMLError as e:
         raise DeserializationError(e)
-
-    app_label = fields.pop('app_label')
-    model_name = fields.pop('model_name')
-    model = apps.get_model(app_label, model_name)
 
     for field_name, field_value in fields.items():
         if is_fk_field(model, field_name):
@@ -144,15 +91,11 @@ def Deserializer(file, **options):
             raise DeserializationError('Missing content')
 
         fields['content'] = parts[1]
-    elif 'content_format' in fields:
+    else:
         del fields['content_format']
 
-    if 'key' not in fields:
-        key_field_values = [fields[field_name].replace('/', '//') for field_name in model.key_field_names]
-        fields['key'] = '/'.join(key_field_values)
-
     record = {
-        'model': '{}.{}'.format(app_label, model_name),
+        'model': '{}.{}'.format(model._meta.app_label, model._meta.model_name),
         'fields': fields,
     }
 

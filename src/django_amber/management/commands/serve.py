@@ -7,11 +7,9 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.core.management.commands.runserver import Command as RunserverCommand
 
-from django_amber.serialization_helpers import load_from_file
-from django_amber.utils import run_runserver_in_process
-
-from ...models import DjangoPagesModel
-from ...serializer import get_fields_from_path
+from ...serialization_helpers import find_file_paths_in_dir, load_from_file
+from ...models import DjangoPagesModel, parse_dump_path
+from ...utils import run_runserver_in_process
 
 
 def load_changed(changed_paths):
@@ -22,20 +20,10 @@ def load_changed(changed_paths):
 
 def remove_missing(missing_paths):
     for path in missing_paths:
-        fields = get_fields_from_path(path)
-
-        app_label = fields['app_label']
-        model_name = fields['model_name']
-        model = apps.get_model(app_label, model_name)
-
-        key_field_values = [fields[field_name].replace('/', '//') for field_name in model.key_field_names]
-        key = '/'.join(key_field_values)
+        model, key, _ = parse_dump_path(path)
 
         instance = model.objects.get_by_natural_key(key)
         instance.delete()
-
-    # TODO  This requires that the key be computable from the fields that are
-    # stored in the model's path.  This assumption is not enforced anywhere.
 
     # TODO  Decide what to do if deleting the object causes cascading
     # deletes.  Options:
@@ -48,11 +36,10 @@ def get_mtimes():
     mtimes = {}
 
     for model in DjangoPagesModel.subclasses():
-        path = model.dump_path_glob_path()
-        for filename in glob.glob(path):
+        for path in find_file_paths_in_dir(model.get_dump_dir_path()):
             try:
-                stat = os.stat(filename)
-                mtimes[filename] = stat.st_mtime
+                stat = os.stat(path)
+                mtimes[path] = stat.st_mtime
             except FileNotFoundError:
                 # Race condition: the file has disappeared in the time between
                 # the glob and the stat.
@@ -65,16 +52,16 @@ def compare_mtimes(old_mtimes, new_mtimes):
     changed_paths = []
     missing_paths = []
 
-    for filename, old_mtime in old_mtimes.items():
-        new_mtime = new_mtimes.get(filename)
+    for path, old_mtime in old_mtimes.items():
+        new_mtime = new_mtimes.get(path)
         if new_mtime is None:
-            missing_paths.append(filename)
+            missing_paths.append(path)
         elif new_mtime != old_mtime:
-            changed_paths.append(filename)
+            changed_paths.append(path)
 
-    for filename in new_mtimes:
-        if filename not in old_mtimes:
-            changed_paths.append(filename)
+    for path in new_mtimes:
+        if path not in old_mtimes:
+            changed_paths.append(path)
 
     return changed_paths, missing_paths
 

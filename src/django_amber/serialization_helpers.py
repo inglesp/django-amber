@@ -31,3 +31,9 @@ def load_from_file(paths):
 
         for obj in objs_with_deferred_fields:
             obj.save_deferred_fields()
+
+
+def find_file_paths_in_dir(path):
+    for root, _, file_paths in os.walk(path):
+        for file_path in file_paths:
+            yield os.path.join(root, file_path)
