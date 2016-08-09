@@ -45,4 +45,5 @@ def load_from_file(paths):
 def find_file_paths_in_dir(path):
     for root, _, file_paths in os.walk(path):
         for file_path in file_paths:
-            yield os.path.join(root, file_path)
+            if file_path[0] != '.':
+                yield os.path.join(root, file_path)

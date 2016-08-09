@@ -370,6 +370,16 @@ class TestLoadPages(DjangoPagesTestCase):
         with self.assertRaises(CommandError):
             management.call_command('loadpages', verbosity=0)
 
+    def test_loadpages_with_dotfile_in_dump_dir(self):
+        set_up_dumped_data(valid_only=True)
+
+        path = get_path('article', 'en/.django') + '.swp'
+        with open(path, 'wb') as f:
+            # This is the opening of a Vim swap file
+            f.write(b'\x62\x30\x56\x49\x4d\x20\x37\x2e\x33\x00\x00\x00\x00\x10\x00\x00')
+
+        management.call_command('loadpages', verbosity=0)
+
 
 # This needs to subclass TransactionTestCase instead of TestCase, because
 # TestCase executes all database statements inside a transaction, meaning that
