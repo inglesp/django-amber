@@ -5,6 +5,12 @@ from django.db import transaction
 from .serializer import Deserializer, Serializer
 
 
+class LoadFromFileError(Exception):
+    def __init__(self, original_exception, path):
+        self.original_exception = original_exception
+        self.path = path
+
+
 def dump_to_file(instance):
     dump_path = instance.dump_path()
     os.makedirs(os.path.dirname(dump_path), exist_ok=True)
@@ -22,12 +28,15 @@ def load_from_file(paths):
 
     with transaction.atomic():
         for path in paths:
-            with open(path, 'rb') as f:
-                for obj in Deserializer(f, handle_forward_references=True):
-                    obj.save()
+            try:
+                with open(path, 'rb') as f:
+                    for obj in Deserializer(f, handle_forward_references=True):
+                        obj.save()
 
-                    if obj.deferred_fields:
-                        objs_with_deferred_fields.append(obj)
+                        if obj.deferred_fields:
+                            objs_with_deferred_fields.append(obj)
+            except Exception as e:
+                raise LoadFromFileError(e, path)
 
         for obj in objs_with_deferred_fields:
             obj.save_deferred_fields()

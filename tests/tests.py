@@ -13,6 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, TransactionTestCase, override_settings
 
 from django_amber.management.commands import serve
+from django.core.management.base import CommandError
 from django_amber.models import parse_dump_path
 from django_amber.serialization_helpers import dump_to_file, load_from_file
 from django_amber.serializer import Deserializer, Serializer
@@ -331,9 +332,10 @@ class TestLoadPages(DjangoPagesTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestLoadPages, cls).setUpClass()
-        set_up_dumped_data(valid_only=True)
 
     def test_loadpages(self):
+        set_up_dumped_data(valid_only=True)
+
         self.assertEqual(Article.objects.count(), 0)
         self.assertEqual(Author.objects.count(), 0)
         self.assertEqual(Tag.objects.count(), 0)
@@ -357,6 +359,16 @@ class TestLoadPages(DjangoPagesTestCase):
         self.assertEqual(obj.title, 'All about Django')
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
+
+    def test_loadpages_with_invalid_data(self):
+        set_up_dumped_data()
+
+        self.assertEqual(Article.objects.count(), 0)
+        self.assertEqual(Author.objects.count(), 0)
+        self.assertEqual(Tag.objects.count(), 0)
+
+        with self.assertRaises(CommandError):
+            management.call_command('loadpages', verbosity=0)
 
 
 # This needs to subclass TransactionTestCase instead of TestCase, because
