@@ -417,13 +417,14 @@ class TestBuildSite(TransactionTestCase):
         self.assertDirectoriesEqual('output', os.path.join('tests', 'expected-output'))
 
     @override_settings(DJANGO_AMBER_CNAME='amber.example.com')
+    @override_settings(DEBUG=True)  # This is required for static file handling
     def test_buildsite_with_cname(self):
         management.call_command('buildsite', verbosity=0)
         path = os.path.join('output', 'CNAME')
         with open(path) as f:
             self.assertEqual('amber.example.com', f.read())
 
-    @override_settings()
+    @override_settings(DEBUG=True)  # This is required for static file handling
     def test_buildsite_without_cname(self):
         del settings.DJANGO_AMBER_CNAME
         management.call_command('buildsite', verbosity=0)
