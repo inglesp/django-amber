@@ -28,6 +28,7 @@ class Command(BaseCommand):
         shutil.rmtree(output_path, ignore_errors=True)
 
         for rsp in http_crawler.crawl('http://localhost:{}/'.format(port), follow_external_links=False):
+            rsp.raise_for_status()
             path = http_crawler.urlparse(rsp.url).path
             segments = path.split('/')
             assert segments[0] == ''
