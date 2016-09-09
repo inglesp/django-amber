@@ -27,9 +27,16 @@ class Command(BaseCommand):
         output_path = os.path.join(settings.BASE_DIR, 'output')
         shutil.rmtree(output_path, ignore_errors=True)
 
-        for rsp in http_crawler.crawl('http://localhost:{}/'.format(port), follow_external_links=False):
+        for rsp in http_crawler.crawl('http://localhost:{}/'.format(port)):
             rsp.raise_for_status()
-            path = http_crawler.urlparse(rsp.url).path
+
+            parsed_url = http_crawler.urlparse(rsp.url)
+
+            if parsed_url.netloc != 'localhost:{}'.format(port):
+                # This is an external request, which we don't care about
+                continue
+
+            path = parsed_url.path
             segments = path.split('/')
             assert segments[0] == ''
             if segments[-1] == '':
