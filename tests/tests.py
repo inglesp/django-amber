@@ -1,3 +1,4 @@
+import datetime
 from filecmp import dircmp
 import glob
 from multiprocessing import Process
@@ -19,7 +20,7 @@ from django_amber.serialization_helpers import dump_to_file, load_from_file
 from django_amber.serializer import Deserializer, Serializer
 from django_amber.utils import get_free_port, get_with_retries, wait_for_server
 
-from .models import Article, Author, Tag
+from .models import Article, Author, DateTimeModel, Tag
 
 
 def get_path(model_name, key):
@@ -65,6 +66,10 @@ valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
     'tests/data/tag/python.yml',
     'tests/data/articles/en/django.md',
     'tests/data/articles/en/python.md',
+    'tests/data/datetimemodel/quoted-fields.yml',
+    'tests/data/datetimemodel/quoted-time-field.yml',
+    'tests/data/datetimemodel/unquoted-fields.yml',
+    'tests/data/datetimemodel/null-fields.yml',
 ]]
 
 
@@ -178,6 +183,36 @@ class TestDeserialization(DjangoPagesTestCase):
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 
+    def test_deserialization_of_datetime_fields(self):
+        deserialized_obj = self.deserialize('datetimemodel', 'quoted-fields')
+        deserialized_obj.save()
+        obj = deserialized_obj.object
+
+        self.assertEqual(obj.key, 'quoted-fields')
+        self.assertEqual(obj.date, datetime.date(2016, 12, 30))
+        self.assertEqual(obj.time, datetime.time(16, 17, 18))
+        self.assertEqual(obj.datetime, datetime.datetime(2016, 12, 30, 16, 17, 18))
+
+    def test_deserialization_of_unquoted_time_field(self):
+        deserialized_obj = self.deserialize('datetimemodel', 'unquoted-fields')
+        deserialized_obj.save()
+        obj = deserialized_obj.object
+
+        self.assertEqual(obj.key, 'unquoted-fields')
+        self.assertEqual(obj.date, datetime.date(2016, 12, 30))
+        self.assertEqual(obj.time, datetime.time(16, 17, 18))
+        self.assertEqual(obj.datetime, datetime.datetime(2016, 12, 30, 16, 17, 18))
+
+    def test_deserialization_of_null_datetime_fields(self):
+        deserialized_obj = self.deserialize('datetimemodel', 'null-fields')
+        deserialized_obj.save()
+        obj = deserialized_obj.object
+
+        self.assertEqual(obj.key, 'null-fields')
+        self.assertEqual(obj.date, None)
+        self.assertEqual(obj.time, None)
+        self.assertEqual(obj.datetime, None)
+
     def test_deserialization_with_invalid_yaml_without_content(self):
         with self.assertRaises(serializers.base.DeserializationError):
             self.deserialize('author', 'invalid_yaml')
@@ -204,22 +239,42 @@ class TestSerialization(DjangoPagesTestCase):
     def setUpTestData(cls):
         cls.create_model_instances()
 
-    def serialize(self, obj, content_format):
+    def serialize(self, obj):
         serializer = Serializer()
         return serializer.serialize([obj], use_natural_foreign_keys=True)
 
     def test_serialization_without_content(self):
         # We use author2 here since it has a foreign key another author
-        actual = self.serialize(self.author2, 'yml')
+        actual = self.serialize(self.author2)
         with open(get_test_file_path('author', 'john')) as f:
             expected = f.read()
         self.assertEqual(actual, expected)
 
     def test_serialization_with_content(self):
-        actual = self.serialize(self.article1, 'md')
+        actual = self.serialize(self.article1)
         with open(get_test_file_path('article', 'en/django')) as f:
             expected = f.read()
         self.assertEqual(actual, expected)
+
+    def test_serialization_of_datetime_fields(self):
+        m = DateTimeModel.objects.create(
+            date=datetime.date(2016, 12, 30),
+            time=datetime.time(16, 17, 18),
+            datetime=datetime.datetime(2016, 12, 30, 16, 17, 18),
+        )
+        actual = self.serialize(m)
+        with open(get_test_file_path('datetimemodel', 'quoted-time-field')) as f:
+            expected = f.read()
+        self.assertEqual(actual, expected)
+
+    def test_serialization_of_null_datetime_fields(self):
+        m = DateTimeModel.objects.create(
+            date=None,
+            time=None,
+            datetime=None,
+        )
+        actual = self.serialize(m)
+        self.assertEqual(actual, '{}\n')
 
 
 class TestLoadFromFile(DjangoPagesTestCase):
@@ -441,7 +496,6 @@ class TestServeDynamic(DjangoPagesTestCase):
             os.utime(path, (t, t))
 
         mtimes = serve.get_mtimes()
-
         self.assertEqual(len(mtimes), len(valid_data_paths))
 
         for ix, path in enumerate(valid_data_paths):

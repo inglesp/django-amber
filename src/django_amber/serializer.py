@@ -42,6 +42,10 @@ class Serializer(PythonSerializer):
                 assert isinstance(field_value, list) and all(len(v) == 1 for v in field_value)
                 fields[field_name] = [v[0] for v in field_value]
 
+            if is_time_field(model, field_name):
+                # See comment in django.core.serializers.pyyaml.Serializer.handle_field
+                fields[field_name] = str(fields[field_name])
+
         yaml.dump(fields, self.stream, Dumper=DjangoSafeDumper,
                   default_flow_style=False, **self.options)
 
@@ -81,6 +85,14 @@ def Deserializer(file, **options):
             assert isinstance(field_value, list) and all(isinstance(v, str) for v in field_value)
             fields[field_name] = [[v] for v in field_value]
 
+        if is_time_field(model, field_name):
+            if isinstance(fields[field_name], int):
+                num_seconds = fields[field_name]
+                assert 0 <= num_seconds <= 24 * 60 * 60
+                hours, minutes_and_seconds = divmod(num_seconds, 60 * 60)
+                minutes, seconds = divmod(minutes_and_seconds, 60)
+                fields[field_name] = '{}:{}:{}'.format(hours, minutes, seconds)
+
     if model.has_content:
         if len(parts) == 1:
             raise DeserializationError('Missing content')
@@ -116,3 +128,12 @@ def is_m2m_field(model, field_name):
         return False
 
     return field.remote_field and isinstance(field.remote_field, models.ManyToManyRel)
+
+
+def is_time_field(model, field_name):
+    try:
+        field = model._meta.get_field(field_name)
+    except FieldDoesNotExist:
+        return False
+
+    return isinstance(field, models.TimeField)
