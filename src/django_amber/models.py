@@ -52,7 +52,7 @@ class DjangoPagesModel(models.Model):
         return re.findall('\[(\w*)\]', cls.key_structure)
 
     def dump_path(self):
-        if self.key is None:
+        if not self.key:
             self.set_key()
 
         return os.path.join(self.get_dump_dir_path(), *self.key.split('/')) + '.' + self.content_format

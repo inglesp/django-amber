@@ -148,7 +148,7 @@ class TestModel(DjangoPagesTestCase):
         self.assertEqual(Author.fields_from_key('john'), {})
 
     def test_set_key(self):
-        self.article1.key = None
+        self.article1.key = ''
         self.article1.set_key()
         self.assertEqual(self.article1.key, 'en/django')
 
@@ -375,7 +375,7 @@ class TestDumpToFile(DjangoPagesTestCase):
         self.check_dumped_output_correct('article', 'en/django')
 
     def test_dump_to_file_with_key_not_set(self):
-        self.article1.key = None
+        self.article1.key = ''
         dump_to_file(self.article1)
         self.check_dumped_output_correct('article', 'en/django')
 
