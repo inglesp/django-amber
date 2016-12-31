@@ -33,6 +33,10 @@ class Serializer(PythonSerializer):
         fields.pop('content_format', None)
         content = fields.pop('content', None)
 
+        if model.key_structure is not None:
+            for field_name in model.field_names_from_key_structure():
+                fields.pop(field_name)
+
         for field_name, field_value in fields.items():
             if is_fk_field(model, field_name):
                 assert isinstance(field_value, tuple) and len(field_value) == 1
@@ -70,6 +74,8 @@ def Deserializer(file, **options):
     parts = data.split(separator, 1)
 
     fields = {'key': key, 'content_format': content_format}
+
+    fields.update(model.fields_from_key(key))
 
     try:
         fields.update(yaml.load(parts[0], Loader=SafeLoader))

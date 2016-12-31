@@ -95,6 +95,8 @@ class DjangoPagesTestCase(TestCase):
         cls.article1 = Article.objects.create(
             key='en/django',
             title='All about Django',
+            language='en',
+            slug='django',
             content='This is an article about *Django*.\n',
             content_format='md',
             author=cls.author1,
@@ -104,6 +106,8 @@ class DjangoPagesTestCase(TestCase):
         cls.article2 = Article.objects.create(
             key='en/python',
             title='All about Python',
+            language='en',
+            slug='python',
             content='This is an article about *Python*.\n',
             content_format='md',
             author=cls.author2,
@@ -136,6 +140,17 @@ class TestModel(DjangoPagesTestCase):
 
     def test_get_by_natural_key_with_content(self):
         self.assertEqual(Article.objects.get_by_natural_key('en/python'), self.article2)
+
+    def test_fields_from_key(self):
+        self.assertEqual(Article.fields_from_key('en/django'), {'language': 'en', 'slug': 'django'})
+
+    def test_fields_from_key_with_no_key_structure(self):
+        self.assertEqual(Author.fields_from_key('john'), {})
+
+    def test_set_key(self):
+        self.article1.key = None
+        self.article1.set_key()
+        self.assertEqual(self.article1.key, 'en/django')
 
     def test_parse_dump_path(self):
         path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'articles', 'en', 'django.md')
@@ -180,6 +195,8 @@ class TestDeserialization(DjangoPagesTestCase):
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
+        self.assertEqual(obj.slug, 'django')
+        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 
@@ -310,6 +327,8 @@ class TestLoadFromFile(DjangoPagesTestCase):
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
+        self.assertEqual(obj.slug, 'django')
+        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 
@@ -352,6 +371,11 @@ class TestDumpToFile(DjangoPagesTestCase):
         self.check_dumped_output_correct('author', 'john')
 
     def test_dump_to_file_with_content(self):
+        dump_to_file(self.article1)
+        self.check_dumped_output_correct('article', 'en/django')
+
+    def test_dump_to_file_with_key_not_set(self):
+        self.article1.key = None
         dump_to_file(self.article1)
         self.check_dumped_output_correct('article', 'en/django')
 
@@ -412,6 +436,8 @@ class TestLoadPages(DjangoPagesTestCase):
         self.assertEqual(obj.content_format, 'md')
         self.assertEqual(obj.content, 'This is an article about *Django*.\n')
         self.assertEqual(obj.title, 'All about Django')
+        self.assertEqual(obj.slug, 'django')
+        self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 

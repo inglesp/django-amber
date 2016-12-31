@@ -4,10 +4,13 @@ from django_amber.models import ModelWithContent, ModelWithoutContent
 
 class Article(ModelWithContent):
     title = models.CharField(max_length=255)
+    slug = models.CharField(max_length=255)
+    language = models.CharField(max_length=255)
     author = models.ForeignKey('Author', null=True)
     tags = models.ManyToManyField('Tag', related_name='articles')
 
     dump_dir_path = 'tests/data/articles'
+    key_structure = '[language]/[slug]'
 
 
 class Author(ModelWithoutContent):

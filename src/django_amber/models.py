@@ -1,4 +1,5 @@
 import os
+import re
 
 from django.apps import apps
 from django.conf import settings
@@ -17,6 +18,7 @@ class DjangoPagesModel(models.Model):
         abstract = True
 
     dump_dir_path = None
+    key_structure = None
 
     @classmethod
     def get_dump_dir_path(cls):
@@ -33,11 +35,39 @@ class DjangoPagesModel(models.Model):
                 if issubclass(model, DjangoPagesModel):
                     yield model
 
+    @classmethod
+    def fields_from_key(cls, key):
+        if cls.key_structure is None:
+            return {}
+
+        pattern = cls.key_structure
+        for field_name in cls.field_names_from_key_structure():
+            pattern = pattern.replace('[{}]'.format(field_name), '(?P<{}>.+)'.format(field_name))
+
+        match = re.match(pattern, key)
+        return match.groupdict()
+
+    @classmethod
+    def field_names_from_key_structure(cls):
+        return re.findall('\[(\w*)\]', cls.key_structure)
+
     def dump_path(self):
+        if self.key is None:
+            self.set_key()
+
         return os.path.join(self.get_dump_dir_path(), *self.key.split('/')) + '.' + self.content_format
 
     def natural_key(self):
         return (self.key,)
+
+    def set_key(self):
+        assert self.key_structure is not None
+
+        key = self.key_structure
+        for field_name in self.field_names_from_key_structure():
+            key = key.replace('[{}]'.format(field_name), getattr(self, field_name))
+
+        self.key = key
 
     def __str__(self):
         return self.key
