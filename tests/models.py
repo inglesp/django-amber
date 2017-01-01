@@ -23,6 +23,13 @@ class Tag(ModelWithoutContent):
     name = models.CharField(max_length=255)
 
 
+class Comment(ModelWithContent):
+    article = models.ForeignKey('Article')
+    date = models.DateField()
+
+    key_structure = '[article]/[date]'
+
+
 class DateTimeModel(ModelWithoutContent):
     date = models.DateField(null=True)
     time = models.TimeField(null=True)

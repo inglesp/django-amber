@@ -67,20 +67,38 @@ class Serializer(PythonSerializer):
 def Deserializer(file, **options):
     model, key, content_format = parse_dump_path(file.name)
 
-    data = file.read().decode('utf-8')
-
-    separator = '\n---\n'
-
-    parts = data.split(separator, 1)
-
-    fields = {'key': key, 'content_format': content_format}
-
+    fields = {'key': key}
     fields.update(model.fields_from_key(key))
 
-    try:
-        fields.update(yaml.load(parts[0], Loader=SafeLoader))
-    except yaml.YAMLError as e:
-        raise DeserializationError(e)
+    data = file.read().decode('utf-8')
+    separator = '\n---\n'
+    parts = data.split(separator, 1)
+
+    if model.has_content:
+        try:
+            yaml_fields = yaml.load(parts[0], Loader=SafeLoader)
+        except yaml.YAMLError as e:
+            raise DeserializationError(e)
+
+        if len(parts) == 1:
+            if isinstance(yaml_fields, dict):
+                raise DeserializationError('Missing content')
+
+            fields['content'] = parts[0]
+        else:
+            try:
+                fields.update(yaml.load(parts[0], Loader=SafeLoader))
+            except yaml.YAMLError as e:
+                raise DeserializationError(e)
+            fields['content'] = parts[1]
+
+        fields['content_format'] = content_format
+    else:
+        assert len(parts) == 1
+        try:
+            fields.update(yaml.load(parts[0], Loader=SafeLoader))
+        except yaml.YAMLError as e:
+            raise DeserializationError(e)
 
     for field_name, field_value in fields.items():
         if is_fk_field(model, field_name):
@@ -98,14 +116,6 @@ def Deserializer(file, **options):
                 hours, minutes_and_seconds = divmod(num_seconds, 60 * 60)
                 minutes, seconds = divmod(minutes_and_seconds, 60)
                 fields[field_name] = '{}:{}:{}'.format(hours, minutes, seconds)
-
-    if model.has_content:
-        if len(parts) == 1:
-            raise DeserializationError('Missing content')
-
-        fields['content'] = parts[1]
-    else:
-        del fields['content_format']
 
     record = {
         'model': '{}.{}'.format(model._meta.app_label, model._meta.model_name),

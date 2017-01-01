@@ -65,7 +65,12 @@ class DjangoPagesModel(models.Model):
 
         key = self.key_structure
         for field_name in self.field_names_from_key_structure():
-            key = key.replace('[{}]'.format(field_name), getattr(self, field_name))
+            value = getattr(self, field_name)
+            if isinstance(value, DjangoPagesModel):
+                value = value.key
+            else:
+                value = str(value)
+            key = key.replace('[{}]'.format(field_name), value)
 
         self.key = key
 

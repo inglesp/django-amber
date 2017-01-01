@@ -24,19 +24,25 @@ from .models import Article, Author, DateTimeModel, Tag
 
 
 def get_path(model_name, key):
-    if model_name == 'article':
-        language, slug = key.split('/')
-        return os.path.join(settings.BASE_DIR, 'tests', 'data', 'articles', language, slug + '.md')
-    else:
-        return os.path.join(settings.BASE_DIR, 'tests', 'data', model_name, key + '.yml')
+    base_path = os.path.join(settings.BASE_DIR, 'tests', 'data')
+    return _get_path(base_path, model_name, key)
 
 
 def get_test_file_path(model_name, key):
+    base_path = os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data')
+    return _get_path(base_path, model_name, key)
+
+
+def _get_path(base_path, model_name, key):
     if model_name == 'article':
         language, slug = key.split('/')
-        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', 'articles', language, slug + '.md')
+        return os.path.join(base_path, 'articles', language, slug + '.md')
     else:
-        return os.path.join(settings.BASE_DIR, 'tests', 'test-files', 'data', model_name, key + '.yml')
+        if model_name == 'comment':
+            filename = '{}.md'.format(key)
+        else:
+            filename = '{}.yml'.format(key)
+        return os.path.join(base_path, model_name, filename)
 
 
 def set_up_dumped_data(valid_only=False):
@@ -66,6 +72,7 @@ valid_data_paths = [os.path.abspath(rel_path) for rel_path in [
     'tests/data/tag/python.yml',
     'tests/data/articles/en/django.md',
     'tests/data/articles/en/python.md',
+    'tests/data/comment/en/django/2016-12-31.md',
     'tests/data/datetimemodel/quoted-fields.yml',
     'tests/data/datetimemodel/quoted-time-field.yml',
     'tests/data/datetimemodel/unquoted-fields.yml',
@@ -200,6 +207,22 @@ class TestDeserialization(DjangoPagesTestCase):
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
 
+    def test_deserialization_where_all_fields_in_key(self):
+        Article.objects.create(
+            key='en/django',
+            language='en',
+            slug='django',
+        )
+
+        deserialized_obj = self.deserialize('comment', 'en/django/2016-12-31')
+        deserialized_obj.save()
+        obj = deserialized_obj.object
+
+        self.assertEqual(obj.key, 'en/django/2016-12-31')
+        self.assertEqual(obj.content_format, 'md')
+        self.assertEqual(obj.content, 'First post!\n')
+        self.assertEqual(obj.article.key, 'en/django')
+
     def test_deserialization_of_datetime_fields(self):
         deserialized_obj = self.deserialize('datetimemodel', 'quoted-fields')
         deserialized_obj.save()
@@ -246,9 +269,10 @@ class TestDeserialization(DjangoPagesTestCase):
         with self.assertRaises(serializers.base.DeserializationError):
             self.deserialize('article', 'en/invalid_object')
 
-    def test_deserialization_with_missing_content_with_content(self):
-        with self.assertRaises(serializers.base.DeserializationError):
+    def test_deserialization_with_invalid_object_with_missing_content(self):
+        with self.assertRaises(serializers.base.DeserializationError) as cm:
             self.deserialize('article', 'en/invalid_missing_content')
+        self.assertEqual(str(cm.exception), 'Missing content')
 
 
 class TestSerialization(DjangoPagesTestCase):
