@@ -20,7 +20,7 @@ from django_amber.serialization_helpers import dump_to_file, load_from_file
 from django_amber.serializer import Deserializer, Serializer
 from django_amber.utils import get_free_port, get_with_retries, wait_for_server
 
-from .models import Article, Author, DateTimeModel, Tag
+from .models import Article, Author, Comment, DateTimeModel, Tag
 
 
 def get_path(model_name, key):
@@ -464,6 +464,12 @@ class TestLoadPages(DjangoPagesTestCase):
         self.assertEqual(obj.language, 'en')
         self.assertEqual(obj.author.key, 'jane')
         self.assertEqual([tag.key for tag in obj.tags.all()], ['django'])
+
+        obj = Comment.objects.get(key= 'en/django/2016-12-31')
+        self.assertEqual(obj.key, 'en/django/2016-12-31')
+        self.assertEqual(obj.content_format, 'md')
+        self.assertEqual(obj.content, 'First post!\n')
+        self.assertEqual(obj.article.key, 'en/django')
 
     def test_loadpages_with_invalid_data(self):
         set_up_dumped_data()
