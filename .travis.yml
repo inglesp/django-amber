@@ -1,5 +1,5 @@
 language: python
-python: "3.5"
+python: "3.6"
 services:
   - postgresql
 install:
@@ -7,4 +7,4 @@ install:
   - pip install -r requirements-test.txt
 before_script:
   - psql -c 'create database "django-amber-test";' -U postgres
-script: tox -e py35
+script: tox -e py36
