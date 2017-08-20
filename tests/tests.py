@@ -495,6 +495,7 @@ class TestLoadPages(DjangoPagesTestCase):
 # This needs to subclass TransactionTestCase instead of TestCase, because
 # TestCase executes all database statements inside a transaction, meaning that
 # the objects that loadpages creates won't be visible to runserver.
+@override_settings(DEBUG=True)  # This is required for static file handling
 class TestBuildSite(TransactionTestCase):
     @classmethod
     def setUpClass(cls):
@@ -522,25 +523,31 @@ class TestBuildSite(TransactionTestCase):
             new_path2 = os.path.join(path2, common_dir)
             self.assertDirectoriesEqual(new_path1, new_path2)
 
-    @override_settings(DEBUG=True)  # This is required for static file handling
     def test_buildsite(self):
         management.call_command('buildsite', verbosity=0)
         self.assertDirectoriesEqual('output', os.path.join('tests', 'expected-output'))
 
     @override_settings(DJANGO_AMBER_CNAME='amber.example.com')
-    @override_settings(DEBUG=True)  # This is required for static file handling
     def test_buildsite_with_cname(self):
         management.call_command('buildsite', verbosity=0)
         path = os.path.join('output', 'CNAME')
         with open(path) as f:
             self.assertEqual('amber.example.com', f.read())
 
-    @override_settings(DEBUG=True)  # This is required for static file handling
     def test_buildsite_without_cname(self):
         del settings.DJANGO_AMBER_CNAME
         management.call_command('buildsite', verbosity=0)
         path = os.path.join('output', 'CNAME')
         self.assertFalse(os.path.exists(path))
+
+    @override_settings(DJANGO_AMBER_CRAWL_OPTIONS={'k': 'v'})
+    def test_buildsite_with_crawl_options(self):
+        with self.assertRaises(TypeError) as ctx:
+            # We expect a TypeError to be raised because of the invalid option.
+            # This seems the simplest way of checking that the option gets
+            # passed to `http_crawler.crawl()`.
+            management.call_command('buildsite', verbosity=0)
+        self.assertEqual(str(ctx.exception), "crawl() got an unexpected keyword argument 'k'")
 
 
 class TestServeDynamic(DjangoPagesTestCase):

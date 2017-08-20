@@ -27,7 +27,9 @@ class Command(BaseCommand):
         output_path = os.path.join(settings.BASE_DIR, 'output')
         shutil.rmtree(output_path, ignore_errors=True)
 
-        for rsp in http_crawler.crawl('http://localhost:{}/'.format(port)):
+        crawl_options = getattr(settings, 'DJANGO_AMBER_CRAWL_OPTIONS', {})
+
+        for rsp in http_crawler.crawl('http://localhost:{}/'.format(port), **crawl_options):
             rsp.raise_for_status()
 
             parsed_url = http_crawler.urlparse(rsp.url)
