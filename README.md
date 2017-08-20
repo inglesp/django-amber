@@ -6,7 +6,10 @@ Harness the power of Django to build your static sites!
 
 ## Status
 
-Alpha-ish.  Django Amber is not yet used in production anywhere.
+Beta-ish.
+
+Django Amber is used for the websites of [PyCon UK](http://pyconuk.org) and
+[UK Python News](http://uk.python.org/).
 
 
 ## Installation
